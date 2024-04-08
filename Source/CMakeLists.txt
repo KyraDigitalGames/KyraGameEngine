@@ -1,0 +1,6 @@
+add_subdirectory(Log)
+add_subdirectory(Platform)
+if(KYRA_RENDERER_GL)
+	add_subdirectory(GLEX)
+endif()
+add_subdirectory(Framework)
