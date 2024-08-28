@@ -1,0 +1,32 @@
+
+#include "GLEX.hpp"
+
+// VERTEX BUFFER FUNCTIONS
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLBUFFERSUBDATAPROC glBufferSubData = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+
+// SHADER FUNCTIONS
+PFNGLCREATESHADERPROC glCreateShader = nullptr;
+PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
+PFNGLCOMPILESHADERPROC glCompileShader = nullptr;
+PFNGLGETSHADERIVPROC glGetShaderiv  = nullptr;
+PFNGLDELETESHADERPROC glDeleteShader = nullptr;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = nullptr;
+
+// SHADER PROGRAM FUNCTIONS
+PFNGLCREATEPROGRAMPROC glCreateProgram = nullptr;
+PFNGLATTACHSHADERPROC glAttachShader = nullptr;
+PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
+PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
+PFNGLDELETEPROGRAMPROC glDeleteProgram = nullptr;
+
+// VERTEX ARRAY OBJECT FUNCTIONS
+PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = nullptr;
+PFNGLBINDVERTEXARRAYPROC glBindVertexArray = nullptr;
+PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = nullptr;
+PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray = nullptr;
+PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = nullptr;
