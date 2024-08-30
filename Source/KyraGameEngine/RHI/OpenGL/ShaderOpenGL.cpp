@@ -1,5 +1,7 @@
 
 #include "ShaderOpenGL.hpp"
+#include <KyraGameEngine/Platform/MessageBox.hpp>
+#include <format>
 
 namespace kyra {
 	
@@ -9,7 +11,6 @@ namespace kyra {
 		}
 	}
 		
-	/// \todo Use a platform independent message box class
 	bool ShaderOpenGL::init(GLenum shaderType, const char* sourceCode) {
 		if(m_Id) {
 			glDeleteShader(m_Id);
@@ -25,7 +26,7 @@ namespace kyra {
 			std::string errorMsg;
 			errorMsg.resize(logSize);
 			glGetShaderInfoLog(m_Id, logSize, NULL, &errorMsg[0]);
-			MessageBoxA(NULL, errorMsg.c_str(), "Kyra Game Engine", MB_OK);
+			MessageBox::showError("Kyra Game Engine", std::format("Failed compile shader : {} \n {}", errorMsg.c_str(), sourceCode));
 			return false;
 		}
 		return true;

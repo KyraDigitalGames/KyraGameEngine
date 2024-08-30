@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_SHADERPROGRAM_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_SHADERPROGRAM_HPP
 
-#include "GLEX.hpp"
+#include <KyraGameEngine/Platform/OpenGL/GLEX.hpp>
 #include "ShaderOpenGL.hpp"
 #include <KyraGameEngine/RHI/AbstractShaderProgram.hpp>
 #include <filesystem>

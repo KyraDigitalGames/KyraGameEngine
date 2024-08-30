@@ -27,8 +27,8 @@ namespace kyra {
 			}
 			
 			ShaderDescriptionGLSL shaderDescription;
-			shaderDescription.vertexShader = "./Assets/Shaders/SpriteShader.vs";
-			shaderDescription.fragmentShader = "./Assets/Shaders/SpriteShader.fs";
+			shaderDescription.vertexShader = "../Assets/Shaders/SpriteShader.vs";
+			shaderDescription.fragmentShader = "../Assets/Shaders/SpriteShader.fs";
 			m_SpriteShaderProgram = context->createShaderProgram();
 			if(!m_SpriteShaderProgram->init(shaderDescription)) {
 				return false;

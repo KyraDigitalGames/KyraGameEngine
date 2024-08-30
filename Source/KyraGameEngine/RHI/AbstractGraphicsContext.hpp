@@ -8,6 +8,8 @@
 #include "AbstractVertexBuffer.hpp"
 #include "AbstractRenderPass.hpp"
 
+#include <KyraGameEngine/Platform.hpp>
+
 #include <memory>
 
 namespace kyra {
@@ -17,6 +19,7 @@ namespace kyra {
 		public:
 		virtual ~AbstractGraphicsContext() = default;
 		
+		[[nodiscard]] virtual bool init(const AbstractWindow* window) = 0;
 		[[nodiscard]] virtual std::unique_ptr<AbstractSwapChain> createSwapChain() = 0;
 		[[nodiscard]] virtual std::unique_ptr<AbstractPipeline> createPipeline() = 0;
 		[[nodiscard]] virtual std::unique_ptr<AbstractShaderProgram> createShaderProgram() = 0;

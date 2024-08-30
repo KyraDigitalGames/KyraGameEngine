@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_COMMANDBUFFEROPENGL_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_COMMANDBUFFEROPENGL_HPP
 
-#include "GLEX.hpp"
+#include <KyraGameEngine/Platform/OpenGL/GLEX.hpp>
 #include <KyraGameEngine/RHI/AbstractCommandBuffer.hpp>
 
 namespace kyra {
@@ -19,6 +19,8 @@ namespace kyra {
 		void bindPipeline(AbstractPipeline* pipeline) final;
 
 		void clear() final;
+		
+		void bindDescriptorSet(AbstractDescriptorSet* descriptorSet) final;
 		
 		void bindVertexBuffer(AbstractVertexBuffer* vertexBuffer) final;
 		

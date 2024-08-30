@@ -1,4 +1,3 @@
-#include "GLEX.hpp"
 #include "CommandBufferOpenGL.hpp"
 
 namespace kyra {
@@ -13,6 +12,11 @@ namespace kyra {
 		
 	void CommandBufferOpenGL::bindVertexBuffer(AbstractVertexBuffer* vertexBuffer) {
 		m_VertexBuffer = vertexBuffer;
+	}
+	
+	/// \todo Implementation
+	void CommandBufferOpenGL::bindDescriptorSet(AbstractDescriptorSet* descriptorSet) {
+		
 	}
 		
 	void CommandBufferOpenGL::draw(int firstVertex, int numVertices) {

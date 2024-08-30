@@ -3,6 +3,7 @@
 
 #include "AbstractRenderTarget.hpp"
 #include "AbstractCommandBuffer.hpp"
+#include "AbstractDescriptorSet.hpp"
 
 namespace kyra {
 	
@@ -11,7 +12,8 @@ namespace kyra {
 		public:
 		virtual ~AbstractRenderPass() = default;
 		
-		virtual void begin(AbstractCommandBuffer* commandBuffer, AbstractRenderTarget* renderTarget) = 0;
+		virtual void begin(AbstractCommandBuffer* commandBuffer, 
+						   AbstractRenderTarget* renderTarget) = 0;
 		virtual void end() = 0;
 				
 	};

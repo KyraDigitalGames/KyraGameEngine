@@ -27,6 +27,8 @@ extern PFNGLATTACHSHADERPROC glAttachShader;
 extern PFNGLLINKPROGRAMPROC glLinkProgram;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
+extern PFNGLGETPROGRAMIVPROC glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
 
 // VERTEX ARRAY OBJECT FUNCTIONS
 extern PFNGLGENVERTEXARRAYSPROC glGenVertexArrays;
@@ -113,6 +115,14 @@ namespace glex {
 		}
 		glDeleteProgram = (PFNGLDELETEPROGRAMPROC)function("glDeleteProgram");
 		if(!glDeleteProgram) {
+			return false;
+		}
+		glGetProgramiv = (PFNGLGETPROGRAMIVPROC)function("glGetProgramiv");
+		if(!glGetProgramiv) {
+			return false;
+		}
+		glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)function("glGetProgramInfoLog");
+		if(!glGetProgramInfoLog) {
 			return false;
 		}
 		

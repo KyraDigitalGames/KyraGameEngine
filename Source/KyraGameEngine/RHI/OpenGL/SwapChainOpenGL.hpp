@@ -1,12 +1,7 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_SWAPCHAINOPENGL_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_SWAPCHAINOPENGL_HPP
 
-#ifdef KYRA_PLATFORM_WINDOWS
-	#include "OpenGLContextWGL.hpp"
-#else
-	#error "This platform is not supported"
-#endif
-
+#include <KyraGameEngine/Platform.hpp>
 #include <KyraGameEngine/RHI/AbstractSwapChain.hpp>
 
 namespace kyra {

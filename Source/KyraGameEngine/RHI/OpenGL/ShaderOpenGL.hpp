@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_SHADEROPENGL_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_SHADEROPENGL_HPP
 
-#include "GLEX.hpp"
+#include <KyraGameEngine/Platform/OpenGL/GLEX.hpp>
 
 namespace kyra {
 	

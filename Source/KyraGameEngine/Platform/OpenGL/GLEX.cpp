@@ -22,6 +22,8 @@ PFNGLATTACHSHADERPROC glAttachShader = nullptr;
 PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLDELETEPROGRAMPROC glDeleteProgram = nullptr;
+PFNGLGETPROGRAMIVPROC glGetProgramiv = nullptr;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = nullptr;
 
 // VERTEX ARRAY OBJECT FUNCTIONS
 PFNGLGENVERTEXARRAYSPROC glGenVertexArrays = nullptr;

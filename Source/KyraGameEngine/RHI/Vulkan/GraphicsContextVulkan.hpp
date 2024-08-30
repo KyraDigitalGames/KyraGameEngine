@@ -1,20 +1,17 @@
-#ifndef KYRAGAMEENGINE_RHI_OPENGL_GRAPHICSCONTEXTOPENGL_HPP
-#define KYRAGAMEENGINE_RHI_OPENGL_GRAPHICSCONTEXTOPENGL_HPP
+#ifndef KYRAGAMEENGINE_RHI_OPENGL_GRAPHICSCONTEXTVULKAN_HPP
+#define KYRAGAMEENGINE_RHI_OPENGL_GRAPHICSCONTEXTVULKAN_HPP
 
 #include <KyraGameEngine/RHI/AbstractGraphicsContext.hpp>
-#include <memory>
 
 namespace kyra {
 
-	class GraphicsContextOpenGL : public AbstractGraphicsContext {
+	class GraphicsContextVulkan : public AbstractGraphicsContext {
 		
 		public:
 	
-		static std::unique_ptr<GraphicsContextOpenGL> create() {
-			return std::make_unique<GraphicsContextOpenGL>();
+		static std::unique_ptr<GraphicsContextVulkan> create() {
+			return std::make_unique<GraphicsContextVulkan>();
 		}
-	
-		[[nodiscard]] bool init(const AbstractWindow* window) final;
 	
 		[[nodiscard]] std::unique_ptr<AbstractSwapChain> createSwapChain() final;
 	

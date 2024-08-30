@@ -1,4 +1,4 @@
-#include <KyraGameEngine/Window.hpp>
+#include <KyraGameEngine/Platform.hpp>
 #include <KyraGameEngine/RHI.hpp>
 
 int main(int argc, char** argv) {
@@ -18,6 +18,9 @@ int main(int argc, char** argv) {
 	// Create graphics context
 	
 	auto graphicsContext = kyra::GraphicsContext::create();
+	if(!graphicsContext->init(window.get())) {
+		return -2;
+	}
 						
 	// Create swap chain					
 						

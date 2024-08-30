@@ -3,12 +3,14 @@
 
 #include "AbstractShaderProgram.hpp"
 #include "BufferLayout.hpp"
+#include "AbstractDescriptorSet.hpp"
 
 namespace kyra {
 	
 	struct PipelineDescriptor {
 		AbstractShaderProgram* shaderProgram = nullptr;
 		BufferLayout bufferLayout;
+		AbstractDescriptorSet* descriptorSet = nullptr;
 	};
 	
 	class AbstractPipeline {

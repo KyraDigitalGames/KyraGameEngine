@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_VERTEXBUFFEROPENGL_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_VERTEXBUFFEROPENGL_HPP
 
-#include "GLEX.hpp"
+#include <KyraGameEngine/Platform/OpenGL/GLEX.hpp>
 #include <KyraGameEngine/RHI/AbstractVertexBuffer.hpp>
 
 namespace kyra {

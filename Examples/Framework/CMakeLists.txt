@@ -1,3 +1,4 @@
 add_subdirectory(01_FirstWindow)
 add_subdirectory(02_SimpleTriangle)
 add_subdirectory(03_Sprite)
+add_subdirectory(04_Application)

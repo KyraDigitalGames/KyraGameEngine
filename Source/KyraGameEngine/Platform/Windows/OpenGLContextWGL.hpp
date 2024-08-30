@@ -1,8 +1,8 @@
 #ifndef KYRAGAMEENGINE_RHI_OPENGL_OPENGLCONTEXTWGL_HPP
 #define KYRAGAMEENGINE_RHI_OPENGL_OPENGLCONTEXTWGL_HPP
 
-#include "GLEX.hpp"
-#include "AbstractOpenGLContext.hpp"
+#include <KyraGameEngine/Platform/OpenGL/GLEX.hpp>
+#include <KyraGameEngine/Platform/AbstractOpenGLContext.hpp>
 #include <windows.h>
 
 namespace kyra {

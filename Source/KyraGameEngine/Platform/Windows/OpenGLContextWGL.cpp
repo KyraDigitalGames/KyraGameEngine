@@ -1,5 +1,7 @@
 
 #include "OpenGLContextWGL.hpp"
+#include <KyraGameEngine/Platform/MessageBox.hpp>
+#include <format>
 
 namespace kyra {
 	
@@ -16,6 +18,7 @@ namespace kyra {
 			
 		m_DeviceContext = GetDC( reinterpret_cast<HWND>(window.getHandle()) );
 		if(!m_DeviceContext) {
+			MessageBox::showError("Kyra Game Engine", std::format("Failed to create device context ( {} )", GetLastError()));			
 			return false;
 		}
 			
@@ -32,14 +35,20 @@ namespace kyra {
 	
 		int pixelformat = ChoosePixelFormat(m_DeviceContext, &pfd);
 		if(!pixelformat) {
+			MessageBox::showError("Kyra Game Engine", std::format("Failed to choose pixelformat ( {} )", GetLastError()));			
 			return false;
 		}
 			
 		if(!SetPixelFormat(m_DeviceContext, pixelformat, &pfd)) {
+			MessageBox::showError("Kyra Game Engine", std::format("Failed to set pixelformat ( {} )", GetLastError()));			
 			return false;
 		}
 			
 		HGLRC temporaryContext = wglCreateContext(m_DeviceContext);
+		if(!temporaryContext) {
+			MessageBox::showError("Kyra Game Engine", std::format("Failed to create temporary OpenGL context ( {} )", GetLastError()));			
+			return false;
+		}
 		wglMakeCurrent(m_DeviceContext, temporaryContext);
 			
 		PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)(wglGetProcAddress("wglCreateContextAttribsARB"));	
@@ -52,9 +61,14 @@ namespace kyra {
 		};
 		
 		m_RenderContext = wglCreateContextAttribsARB(m_DeviceContext, nullptr, attributes);
+		if(!m_RenderContext) {
+			MessageBox::showError("Kyra Game Engine", std::format("Failed to create OpenGL context ( {} )", GetLastError()));			
+			return false;
+		}
 		wglMakeCurrent(m_DeviceContext,m_RenderContext);
 		
 		if(!glex::init(wglGetProcAddress)) {
+			MessageBox::showError("Kyra Game Engine", "Failed to initialise GLEX");			
 			wglDeleteContext(temporaryContext);
 			return false;
 		}

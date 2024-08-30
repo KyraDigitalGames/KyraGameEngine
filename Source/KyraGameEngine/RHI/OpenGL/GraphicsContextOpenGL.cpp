@@ -10,6 +10,10 @@
 
 namespace kyra {
 
+	bool GraphicsContextOpenGL::init(const AbstractWindow* window) {
+		return true;
+	}
+
 	std::unique_ptr<AbstractSwapChain> GraphicsContextOpenGL::createSwapChain() {
 		return std::make_unique<SwapChainOpenGL>();
 	}

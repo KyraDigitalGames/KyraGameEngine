@@ -1,4 +1,5 @@
-#include <KyraGameEngine/Window.hpp>
+#include <KyraGameEngine/Platform.hpp>
+#include <iostream>
 
 int main(int argc, char** argv) {
 		
@@ -12,6 +13,16 @@ int main(int argc, char** argv) {
 	if(!window->init(windowDescriptor)) {
 		return -1;
 	}
+	
+	auto mouseMoveCallback = kyra::MouseMoveCallback.connect([](int x, int y){
+		std::cout << "Mouse moved " << x <<" " << y << std::endl;		
+		return true;
+	});
+	
+	auto windowClosedCallback = kyra::WindowClosedCallback.connect([](){
+		std::cout << "Window closed" << std::endl;		
+		return true;		
+	});
 	
 	// Show the window
 	window->show();			

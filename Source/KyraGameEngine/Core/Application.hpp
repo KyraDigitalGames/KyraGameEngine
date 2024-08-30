@@ -25,7 +25,8 @@ namespace kyra {
 	};
 	
 	class Application {
-			
+	
+		virtual bool onInit(WindowDescriptor& windowDescriptor) = 0;
 			
 		public:
 		virtual ~Application() = default;
@@ -33,13 +34,13 @@ namespace kyra {
 		int run(int argc, char** argv) {
 			
 			WindowDescriptor windowDescriptor;
-			windowDescriptor.title = "Kyra Game Engine";
-			windowDescriptor.width = 1280;
-			windowDescriptor.height = 720;
+			if(!onInit(windowDescriptor)) {
+				return -1;
+			}
 			
 			auto window = std::make_unique<Window>();
 			if(!window->init(windowDescriptor)) {
-				return -1;
+				return -2;
 			}
 			
 			auto graphicsContext = std::make_unique<GraphicsContextOpenGL>();
@@ -82,8 +83,8 @@ namespace kyra {
 			auto commandBuffer = graphicsContext->createCommandBuffer();
 								
 			AbstractRenderTarget renderTarget;
-								
-			RenderPass defaultRenderPass;
+			
+			auto renderPass = graphicsContext->createRenderPass();
 			
 			std::unique_ptr<SceneRenderer> sceneRenderer = std::make_unique<SceneRenderer>();
 			if(!sceneRenderer->init(graphicsContext.get())) {
@@ -97,12 +98,12 @@ namespace kyra {
 			
 			while(window->isOpen()) {
 				window->processEvents();
-				defaultRenderPass.begin(commandBuffer.get(), &renderTarget);
+				renderPass->begin(commandBuffer.get(), &renderTarget);
 				//commandBuffer->bindPipeline(pipeline.get());
 				//commandBuffer->bindVertexBuffer(vertexBuffer.get());
 				//commandBuffer->draw(0,3);
 				sceneRenderer->draw(commandBuffer.get(), &defaultScene);
-				defaultRenderPass.end();
+				renderPass->end();
 				swapChain->present();
 			}
 			
