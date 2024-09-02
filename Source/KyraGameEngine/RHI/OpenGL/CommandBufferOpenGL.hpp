@@ -20,8 +20,6 @@ namespace kyra {
 
 		void clear() final;
 		
-		void bindDescriptorSet(AbstractDescriptorSet* descriptorSet) final;
-		
 		void bindVertexBuffer(AbstractVertexBuffer* vertexBuffer) final;
 		
 		void draw(int firstVertex, int numVertices) final;

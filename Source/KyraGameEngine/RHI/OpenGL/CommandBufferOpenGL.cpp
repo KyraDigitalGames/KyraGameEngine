@@ -14,11 +14,6 @@ namespace kyra {
 		m_VertexBuffer = vertexBuffer;
 	}
 	
-	/// \todo Implementation
-	void CommandBufferOpenGL::bindDescriptorSet(AbstractDescriptorSet* descriptorSet) {
-		
-	}
-		
 	void CommandBufferOpenGL::draw(int firstVertex, int numVertices) {
 		if(m_BoundVertexBuffer != m_VertexBuffer) {
 			m_BoundVertexBuffer = m_VertexBuffer;

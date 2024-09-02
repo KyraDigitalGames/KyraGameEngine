@@ -3,7 +3,6 @@
 
 #include "AbstractRenderTarget.hpp"
 #include "AbstractCommandBuffer.hpp"
-#include "AbstractDescriptorSet.hpp"
 
 namespace kyra {
 	

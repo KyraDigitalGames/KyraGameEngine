@@ -3,7 +3,6 @@
 
 #include "AbstractPipeline.hpp"
 #include "AbstractVertexBuffer.hpp"
-#include "AbstractDescriptorSet.hpp"
 
 namespace kyra {
 	
@@ -15,7 +14,6 @@ namespace kyra {
 		virtual void clear() = 0;
 		virtual void bindPipeline(AbstractPipeline* pipeline) = 0;
 		virtual void bindVertexBuffer(AbstractVertexBuffer* vertexBuffer) = 0;
-		virtual void bindDescriptorSet(AbstractDescriptorSet* descriptorSet) = 0;
 		virtual void draw(int numVertices, int firstVertex) = 0;
 	};
 	
