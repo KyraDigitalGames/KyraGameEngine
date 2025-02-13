@@ -11,6 +11,7 @@
 
 
 #include <KyraGameEngine/Window/AbstractWindow.hpp>
+#include <memory>
 
 namespace kyra {
   
