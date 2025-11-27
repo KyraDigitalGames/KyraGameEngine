@@ -1,0 +1,7 @@
+add_subdirectory(Log)
+add_subdirectory(Window)
+add_subdirectory(Renderer)
+add_subdirectory(Application)
+add_library(KyraGameEngine INTERFACE)
+target_link_libraries(KyraGameEngine INTERFACE KyraLog KyraApplication KyraRenderer)
+target_include_directories(KyraGameEngine INTERFACE ${KYRA_SOURCE_DIRECTORY})
