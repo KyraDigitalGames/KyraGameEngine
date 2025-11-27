@@ -1,4 +1,8 @@
+#include <glad/glad_wgl.h>
+#include <glad/glad.h>
 #include "SwapchainOpenGL.hpp"
+
+#include <KyraGameEngine/Log/Logger.hpp>
 
 namespace kyra {
 	
@@ -14,6 +18,7 @@ namespace kyra {
 			return false;
 		}
 		m_DeviceContext = GetDC(reinterpret_cast<HWND>(descriptor.window->getHandle()));
+		KYRA_LOG_INFO("Create Device Context: " << m_DeviceContext);
 
 		PIXELFORMATDESCRIPTOR pfd = { 0 };
 		pfd.nSize = sizeof(pfd);
@@ -29,15 +34,40 @@ namespace kyra {
 		if (!pixelformat) {
 			return false;
 		}
+		KYRA_LOG_INFO("Choose Pixelformat: " << pixelformat);
 
 		if (!SetPixelFormat(m_DeviceContext, pixelformat, &pfd)) {
+			KYRA_LOG_FATAL("Failed to set pixelformat");
 			return false;
 		}
 
-		m_RenderContext = wglCreateContext(m_DeviceContext);
+		HGLRC temporaryContext = wglCreateContext(m_DeviceContext);
+		wglMakeCurrent(m_DeviceContext, temporaryContext);
+		
+		if (!gladLoadWGL(m_DeviceContext)) {
+			KYRA_LOG_FATAL("Failed to load WGL functions");
+			wglDeleteContext(temporaryContext);
+			return false;
+		}
+		
+		int attributes[] = {
+			WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+			WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+			0
+		};
+
+		m_RenderContext = wglCreateContextAttribsARB(m_DeviceContext, NULL, attributes);
 		wglMakeCurrent(m_DeviceContext, m_RenderContext);
+		wglDeleteContext(temporaryContext);
+
 		return true;
 	}
+
+	void SwapchainOpenGL::setVSync(bool enabled) {
+		wglSwapIntervalEXT((enabled) ? 1 : 0);
+	}
+
 
 	void SwapchainOpenGL::swap() {
 		SwapBuffers(m_DeviceContext);

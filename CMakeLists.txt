@@ -24,7 +24,9 @@ SET(KYRA_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 SET(KYRA_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Source")
 
 # Add subdirectories to the build
+# 'ThirdParty' contains third party libraries
 # 'Source' contains the main engine implementation
 # 'Examples' contains demo applications or sample projects
+ADD_SUBDIRECTORY(ThirdParty)
 ADD_SUBDIRECTORY(Source)
 ADD_SUBDIRECTORY(Examples)

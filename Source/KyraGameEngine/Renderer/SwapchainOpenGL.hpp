@@ -16,6 +16,7 @@ namespace kyra {
 		virtual ~SwapchainOpenGL();
 
 		bool init(SwapchainDescriptor& descriptor) final;
+		void setVSync(bool enabled) final;
 		void swap() final;
 
 	};

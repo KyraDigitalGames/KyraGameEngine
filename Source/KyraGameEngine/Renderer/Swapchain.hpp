@@ -15,6 +15,7 @@ namespace kyra {
 		virtual ~Swapchain() = default;
 
 		virtual bool init(SwapchainDescriptor& descriptor) = 0;
+		virtual void setVSync(bool enabled) = 0;
 		virtual void swap() = 0;
 
 	};
