@@ -4,12 +4,14 @@
 
 #include <assert.h>
 
-#ifdef KYRA_RENDERER_VULKAN
+#define KYRA_RENDERER_VULKAN
 
+#ifdef KYRA_RENDERER_VULKAN
+#include <KyraGameEngine/Renderer/Vulkan/RenderDeviceImplementationVulkan.hpp>
 #endif
 
 #ifdef  KYRA_RENDERER_OPENGL
-#include <KyraGameEngine/Renderer/RenderDeviceImplementationOpenGL.hpp>
+#include <KyraGameEngine/Renderer/OpenGL/RenderDeviceImplementationOpenGL.hpp>
 #endif
 
 #ifdef  KYRA_RENDERER_DIRECTX11
@@ -24,11 +26,15 @@ namespace kyra {
 
 	bool Renderer::init(const RendererDescriptor& descriptor) {
 #ifdef KYRA_RENDERER_VULKAN
-
+		if (descriptor.type == RenderDeviceType::Vulkan) {
+			m_Implementation = std::make_unique<RenderDeviceImplementationVulkan>();
+		}
 #endif
 
 #ifdef  KYRA_RENDERER_OPENGL
-		m_Implementation = std::make_unique<RenderDeviceImplementationOpenGL>();
+		if (descriptor.type == RenderDeviceType::OpenGL) {
+			m_Implementation = std::make_unique<RenderDeviceImplementationOpenGL>();
+		}
 #endif
 
 #ifdef  KYRA_RENDERER_DIRECTX11
@@ -61,6 +67,15 @@ namespace kyra {
 			return nullptr;
 		}
 		return m_Implementation->acquireCommandBuffer();
+	}
+
+
+	void Renderer::setRenderPipeline(RenderPipeline renderPipeline) {
+		m_RenderPipeline = renderPipeline;
+	}
+
+	void Renderer::update() {
+		m_RenderPipeline.renderFrame();
 	}
 
 }

@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RENDERER_SWAPCHAINOPENGL_HPP
 #define KYRAGAMEENGINE_RENDERER_SWAPCHAINOPENGL_HPP
 
-#include "Swapchain.hpp"
+#include <KyraGameEngine/Renderer/Swapchain.hpp>
 #include <Windows.h>
 #include <gl/GL.h>
 

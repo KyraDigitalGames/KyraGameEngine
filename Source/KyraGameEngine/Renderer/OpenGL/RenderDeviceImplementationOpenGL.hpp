@@ -1,7 +1,7 @@
 #ifndef KYRAGAMEENGINE_RENDERER_RENDERDEVICEIMPLEMENTATIONOPENGL_HPP
 #define KYRAGAMEENGINE_RENDERER_RENDERDEVICEIMPLEMENTATIONOPENGL_HPP
 
-#include "RenderDeviceImplementation.hpp"
+#include <KyraGameEngine/Renderer/RenderDeviceImplementation.hpp>
 #include "SwapchainOpenGL.hpp"
 #include "CommandBufferOpenGL.hpp"
 

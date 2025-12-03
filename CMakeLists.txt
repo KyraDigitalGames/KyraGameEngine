@@ -19,9 +19,18 @@ OPTION(KYRA_RENDERER_ENABLE_METAL "Enables the Metal rendering device" OFF)
 OPTION(KYRA_RENDERER_ENABLE_DIRECTX11 "Enables the DirectX11 rendering device" OFF)
 OPTION(KYRA_RENDERER_ENABLE_DIRECTX12 "Enables the DirectX12 rendering device" OFF)
 
+find_package(Vulkan REQUIRED)
+
 # Define root and source directory paths
 SET(KYRA_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 SET(KYRA_SOURCE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Source")
+
+# Define Installaation Directory
+if(NOT DEFINED ${KYRA_GAME_INSTAL_DIR})
+set(KYRA_GAME_INSTALL_DIR ${KYRA_ROOT}/Binary)
+endif()
+MESSAGE(STATUS "Installation Directory: ${KYRA_GAME_INSTALL_DIR}")
+
 
 # Add subdirectories to the build
 # 'ThirdParty' contains third party libraries

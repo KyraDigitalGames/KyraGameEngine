@@ -4,42 +4,40 @@
 #include <KyraGameEngine/Window/Window.hpp>
 #include <KyraGameEngine/Renderer/RenderPipeline.hpp>
 #include <KyraGameEngine/Renderer/RenderPassPresent.hpp>
-#include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
+#include <KyraGameEngine/GameModule/GameModule.hpp>
 
 #include <Windows.h>
 #include <gl/GL.h>
 
-class SimpleRenderPassProcessor : public kyra::RenderPassProcessor {
-
-public:
-
-	bool init(kyra::Renderer& renderer) final {
-		return true;
-	}
-
-	void update(kyra::CommandBuffer* commandBuffer) final {
-		glBegin(GL_TRIANGLES);
-		glColor3f(0, 1, 0);
-		glVertex2f(0, 0);
-		glVertex2f(0, 1);
-		glVertex2f(1, 1);
-		glEnd();
-	}
-
-};
-
-class Pong : public kyra::Application {
+class KyraPlayer : public kyra::Application {
 
 	kyra::Window m_Window;
 	kyra::Renderer m_Renderer;
-	SimpleRenderPassProcessor m_Processor;
+
+	kyra::GameModule m_Module;
 
 public:
+	~KyraPlayer() {
+
+	}
+
 
 	bool onSetup() final {
-		
+
+		if (!m_Module.load("Game.dll")) {
+			return false;
+		}
+
+		auto actor = m_Module.createActor("PlayerPadActor");
+		if (!actor) {
+			return false;
+		}
+		else {
+			actor->update();
+		}
+
 		kyra::WindowDescriptor windowDescriptor;
-		windowDescriptor.title = "Pong";
+		windowDescriptor.title = "Kyra Game Engine";
 		windowDescriptor.width = 1280;
 		windowDescriptor.height = 720;
 		if (!m_Window.init(windowDescriptor)) {
@@ -48,14 +46,10 @@ public:
 		}
 
 		kyra::RendererDescriptor rendererDescriptor;
-		rendererDescriptor.type = kyra::RenderDeviceType::Vulkan;
+		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
 		rendererDescriptor.window = &m_Window;
 		if (!m_Renderer.init(rendererDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise renderer");
-			return false;
-		}
-
-		if (!m_Processor.init(m_Renderer)) {
 			return false;
 		}
 
@@ -68,11 +62,9 @@ public:
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
 		renderPassPresentDescriptor.swapchain = m_Renderer.acquireSwapchain();
-		renderPassPresentDescriptor.processor = &m_Processor;
 		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
 			return false;
 		}
-
 		m_Renderer.setRenderPipeline(renderPipeline);
 
 
@@ -81,9 +73,9 @@ public:
 
 
 	virtual void onStart() final {
-	
+
 	}
-	
+
 	virtual void onUpdate() final {
 		if (!m_Window.isOpen()) {
 			quit();
@@ -91,11 +83,11 @@ public:
 		m_Window.processEvents();
 		m_Renderer.update();
 	}
-	
+
 	virtual void onExit() final {
 
 	}
 
 };
 
-KYRA_DEFINE_APPLICATION(Pong);
+KYRA_DEFINE_APPLICATION(KyraPlayer);
