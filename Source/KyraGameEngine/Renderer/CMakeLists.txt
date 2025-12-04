@@ -54,4 +54,4 @@ add_library(KyraRenderer STATIC RenderDeviceImplementation.hpp
                                 ./Vulkan/VertexBufferVulkan.hpp)
 target_include_directories(KyraRenderer PRIVATE ${KYRA_SOURCE_DIRECTORY})
 target_compile_definitions(KyraRenderer PRIVATE ${KYRA_RENDERER_COMPILE_DEFINITION})
-target_link_libraries(KyraRenderer PRIVATE KyraLog ${KYRA_RENDERER_LINK_LIBRARIES} Vulkan::Vulkan)
+target_link_libraries(KyraRenderer PUBLIC KyraLog ${KYRA_RENDERER_LINK_LIBRARIES} Vulkan::Vulkan)

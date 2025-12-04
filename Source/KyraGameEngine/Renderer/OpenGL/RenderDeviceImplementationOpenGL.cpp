@@ -1,4 +1,6 @@
 #include "RenderDeviceImplementationOpenGL.hpp"
+#include "VertexBufferOpenGL.hpp"
+#include "RenderPipelineStateOpenGL.hpp"
 
 namespace kyra {
 
@@ -16,5 +18,16 @@ namespace kyra {
 	CommandBuffer* RenderDeviceImplementationOpenGL::acquireCommandBuffer() {
 		return &m_CommandBuffer;
 	}
+
+
+	std::shared_ptr<VertexBuffer> RenderDeviceImplementationOpenGL::createVertexBuffer() {
+		return std::make_shared<VertexBufferOpenGL>();
+	}
+
+
+	std::shared_ptr<RenderPipelineState> RenderDeviceImplementationOpenGL::createRenderPipelineState() {
+		return std::make_shared<RenderPipelineStateOpenGL>();
+	}
+
 
 }

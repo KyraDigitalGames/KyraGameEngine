@@ -3,6 +3,8 @@
 
 #include "RenderPipeline.hpp"
 #include "RenderDeviceImplementation.hpp"
+#include "VertexBuffer.hpp"
+#include "RenderPipelineState.hpp"
 #include <KyraGameEngine/Window/Window.hpp>
 #include <memory>
 
@@ -28,9 +30,15 @@ namespace kyra {
 
 	public:
 		
+		
 		bool init(const RendererDescriptor& descriptor);
+		
 		Swapchain* acquireSwapchain();
 		CommandBuffer* acquireCommandBuffer();
+		
+		std::shared_ptr<VertexBuffer> createVertexBuffer();
+		std::shared_ptr<RenderPipelineState> createRenderPipelineState();
+		
 		void setRenderPipeline(RenderPipeline renderPipeline);
 		void update();
 	};

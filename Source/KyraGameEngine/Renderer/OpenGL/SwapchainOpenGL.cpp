@@ -1,5 +1,3 @@
-#include <glad/glad_wgl.h>
-#include <glad/glad.h>
 #include "SwapchainOpenGL.hpp"
 
 #include <KyraGameEngine/Log/Logger.hpp>
@@ -60,6 +58,11 @@ namespace kyra {
 		m_RenderContext = wglCreateContextAttribsARB(m_DeviceContext, NULL, attributes);
 		wglMakeCurrent(m_DeviceContext, m_RenderContext);
 		wglDeleteContext(temporaryContext);
+
+		if (!gladLoadGL()) {
+			return false;
+		}
+			
 
 		return true;
 	}

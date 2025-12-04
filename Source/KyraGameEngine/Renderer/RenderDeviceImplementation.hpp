@@ -3,6 +3,9 @@
 
 #include "Swapchain.hpp"
 #include "CommandBuffer.hpp"
+#include "VertexBuffer.hpp"
+#include "RenderPipeline.hpp"
+#include "RenderPipelineState.hpp"
 #include <memory>
 
 
@@ -18,6 +21,10 @@ namespace kyra {
 		virtual ~RenderDeviceImplementation() = default;
 
 		virtual bool init(RenderDeviceDescriptor& renderDeviceDescriptor) = 0;
+		
+		virtual std::shared_ptr<VertexBuffer> createVertexBuffer() = 0;
+		virtual std::shared_ptr<RenderPipelineState> createRenderPipelineState() = 0;
+
 		virtual Swapchain* acquireSwapchain() = 0;
 		virtual CommandBuffer* acquireCommandBuffer() = 0;
 	};

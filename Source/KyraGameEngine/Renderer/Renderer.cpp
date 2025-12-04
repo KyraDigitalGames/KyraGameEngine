@@ -4,8 +4,6 @@
 
 #include <assert.h>
 
-#define KYRA_RENDERER_VULKAN
-
 #ifdef KYRA_RENDERER_VULKAN
 #include <KyraGameEngine/Renderer/Vulkan/RenderDeviceImplementationVulkan.hpp>
 #endif
@@ -67,6 +65,24 @@ namespace kyra {
 			return nullptr;
 		}
 		return m_Implementation->acquireCommandBuffer();
+	}
+
+
+	std::shared_ptr<VertexBuffer> Renderer::createVertexBuffer() {
+		assert(m_Implementation);
+		if (!m_Implementation) {
+			return nullptr;
+		}
+		return m_Implementation->createVertexBuffer();
+	}
+
+
+	std::shared_ptr<RenderPipelineState> Renderer::createRenderPipelineState() {
+		assert(m_Implementation);
+		if (!m_Implementation) {
+			return nullptr;
+		}
+		return m_Implementation->createRenderPipelineState();
 	}
 
 

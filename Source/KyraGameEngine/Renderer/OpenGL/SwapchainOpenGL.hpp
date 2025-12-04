@@ -2,8 +2,8 @@
 #define KYRAGAMEENGINE_RENDERER_SWAPCHAINOPENGL_HPP
 
 #include <KyraGameEngine/Renderer/Swapchain.hpp>
-#include <Windows.h>
-#include <gl/GL.h>
+#include <glad/glad_wgl.h>
+#include <glad/glad.h>
 
 namespace kyra {
 

@@ -16,6 +16,10 @@ namespace kyra {
 		virtual ~RenderDeviceImplementationOpenGL() = default;
 		
 		bool init(RenderDeviceDescriptor& renderDeviceDescriptor) final;
+
+		std::shared_ptr<VertexBuffer> createVertexBuffer();
+		std::shared_ptr<RenderPipelineState> createRenderPipelineState();
+
 		Swapchain* acquireSwapchain() final;
 		CommandBuffer* acquireCommandBuffer() final;
 
