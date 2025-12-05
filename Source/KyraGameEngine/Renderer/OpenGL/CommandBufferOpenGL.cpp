@@ -8,6 +8,7 @@
 namespace kyra {
 
 	void CommandBufferOpenGL::clear(float r, float g, float b, float a) {
+		glViewport(0, 0, 1280, 720);
 		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT);
 	}

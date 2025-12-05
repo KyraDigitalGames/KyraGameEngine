@@ -7,11 +7,6 @@
 #include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
 
-#include <Windows.h>
-#include <gl/GL.h>
-
-#include <map>
-
 
 class Node;
 class Component {
@@ -97,15 +92,15 @@ public:
 
 	bool init(kyra::Renderer& renderer) final {
 	
-		m_Projection = kyra::Matrix4::ortho(0, 1280, 0, 720, -1, 1);
+		m_Projection = kyra::Matrix4::ortho(0, 1280, 720, 0, -1, 1);
 
 		float vertices[] = {
-			0,0,
-			0,10,
-			10,10,
-			0,0,
-			10,0,
-			10,10
+			200,200,
+			200,400,
+			400,400,
+			200,200,
+			400,200,
+			400,400
 		};
 
 		kyra::VertexBufferDescriptor vertexBufferDescriptor;
@@ -157,26 +152,62 @@ public:
 
 };
 
-class SimpleSystem {
+class AbstractSystem {
 
-	SimpleRenderPassProcessor m_Processor;
+public:
+	virtual ~AbstractSystem() = default;
+
+	virtual bool init(kyra::Renderer* renderer) = 0;
+
+	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) = 0;
+	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) = 0;
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) = 0;
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) = 0;
+	
+	virtual std::size_t getHash() const = 0;
+
+};
+
+class SimpleSystem : public AbstractSystem {
+
+	kyra::Renderer* m_Renderer = nullptr;
 
 public:
 
-	bool init(kyra::Renderer& renderer) {
-		return m_Processor.init(renderer);
+	bool init(kyra::Renderer* renderer) {
+		m_Renderer = renderer;
+		return true;
 	}
 
-	kyra::RenderPassProcessor* getProcessor() {
-		return &m_Processor;
+	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) {
+		if (id == "SimpleMeshComponent") {
+			return std::make_shared<SimpleMeshComponent>();
+		}
+		return nullptr;
 	}
 
-	std::shared_ptr<SimpleMeshComponent> createSimpleMeshComponent() {
-		auto component = std::make_shared<SimpleMeshComponent>();
-		m_Processor.addComponent(component.get());
-		return std::move(component);
+	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) {
+		return nullptr;
 	}
 
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) {
+		if (id == "SimpleRenderPassProcessor") {
+			auto processor = std::make_shared<SimpleRenderPassProcessor>();
+			if (!processor->init(*m_Renderer)) {
+				return nullptr;
+			}
+			return processor;
+		}
+		return nullptr;
+	}
+	
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) {
+		return nullptr;
+	}
+
+	std::size_t getHash() const {
+		return typeid(SimpleSystem).hash_code();
+	}
 };
 
 class Pong : public kyra::Application {
@@ -213,7 +244,7 @@ public:
 			return false;
 		}
 
-		if (!m_System.init(m_Renderer)) {
+		if (!m_System.init(&m_Renderer)) {
 			return false;
 		}
 
@@ -226,23 +257,26 @@ public:
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
 		renderPassPresentDescriptor.swapchain = m_Renderer.acquireSwapchain();
-		renderPassPresentDescriptor.processor = m_System.getProcessor();
+		renderPassPresentDescriptor.processor = m_System.createRenderPassProcessorByString("SimpleRenderPassProcessor");
 		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
 			return false;
 		}
 
-
+		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
 
 		Node* ballNode = m_Scene.createNode("BallNode");
-		auto simpleComponent = m_System.createSimpleMeshComponent();
+		auto simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
+		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		ballNode->addComponent(simpleComponent);
 
 		Node* pad1Node = m_Scene.createNode("Pad1Node");
-		simpleComponent = m_System.createSimpleMeshComponent();
+		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
+		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		pad1Node->addComponent(simpleComponent);
 
 		Node* pad2Node = m_Scene.createNode("Pad2Node");
-		simpleComponent = m_System.createSimpleMeshComponent();
+		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
+		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		pad2Node->addComponent(simpleComponent);
 
 		m_Scene.setRenderPipeline(renderPipeline);

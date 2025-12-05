@@ -80,7 +80,7 @@ namespace kyra {
          */
         struct Cell {
             std::atomic<size_t> sequence;
-            Storage storage;
+            Storage storage = Storage();
         };
 
         std::unique_ptr<Cell[]> m_Cells;    ///< Array of cells (size = capacity)

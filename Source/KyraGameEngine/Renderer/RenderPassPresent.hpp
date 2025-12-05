@@ -9,13 +9,13 @@ namespace kyra {
 
 	struct RenderPassPresentDescriptor {
 		Swapchain* swapchain = nullptr;
-		RenderPassProcessor* processor = nullptr;
+		std::shared_ptr<RenderPassProcessor> processor = nullptr;
 	};
 
 	class RenderPassPresent : public RenderPass {
 
 		Swapchain* m_Swapchain = nullptr;
-		RenderPassProcessor* m_Processor = nullptr;
+		std::shared_ptr<RenderPassProcessor> m_Processor = nullptr;
 
 	public:
 

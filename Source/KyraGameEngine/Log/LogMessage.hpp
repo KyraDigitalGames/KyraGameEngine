@@ -16,9 +16,9 @@ namespace kyra {
 	};
 
 	struct LogMessage {
-		LogLevel level;
-		std::string text;
-		uint64_t frame;
+		LogLevel level = LogLevel::Info;
+		std::string text = "";
+		uint64_t frame = 0;
 		std::thread::id threadId;
 	};
 
