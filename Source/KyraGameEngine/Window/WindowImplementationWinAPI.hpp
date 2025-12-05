@@ -8,7 +8,54 @@ namespace kyra {
 
 	class WindowImplementationWinAPI : public WindowImplementation {
 
+
 		HWND m_Handle = 0;
+
+		static constexpr Key convertKey(WPARAM wparam) {
+			if (wparam == VK_ESCAPE) {
+				return Key::Escape;
+			}
+			return Key::Unknown;
+		}
+
+		static LRESULT CALLBACK eventCallback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+			switch (msg) {
+				case WM_CLOSE:
+					WindowEvents::onClose.dispatch();
+					break;
+				case WM_KEYDOWN:
+					WindowEvents::onKeyDown.dispatch(convertKey(wparam));
+					break;
+				case WM_KEYUP:
+					WindowEvents::onKeyUp.dispatch(convertKey(wparam));
+					break;
+				case WM_MBUTTONDOWN:
+					WindowEvents::onMouseButtonPressed.dispatch(MouseButton::Middle);
+					break;
+				case WM_MBUTTONUP:
+					WindowEvents::onMouseButtonReleased.dispatch(MouseButton::Middle);
+					break;
+				case WM_RBUTTONDOWN:
+					WindowEvents::onMouseButtonPressed.dispatch(MouseButton::Right);
+					break;
+				case WM_RBUTTONUP:
+					WindowEvents::onMouseButtonReleased.dispatch(MouseButton::Right);
+					break;
+				case WM_LBUTTONUP:
+					WindowEvents::onMouseButtonReleased.dispatch(MouseButton::Left);
+					break;
+				case WM_LBUTTONDOWN:
+					WindowEvents::onMouseButtonPressed.dispatch(MouseButton::Left);
+					break;
+				case WM_SIZE:
+					WindowEvents::onSizeChanged.dispatch(0,0);
+					break;
+				case WM_MOVE:
+					WindowEvents::onMoved.dispatch(0,0);
+					break;
+			}
+			return DefWindowProc(hwnd, msg, wparam, lparam);
+		}
 
 	public:
 		~WindowImplementationWinAPI();

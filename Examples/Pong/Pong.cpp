@@ -199,6 +199,12 @@ public:
 			return false;
 		}
 
+		kyra::WindowEvents::onKeyUp.connect(this, [&](kyra::Key key) {
+			if(key == kyra::Key::Escape)
+			quit();
+			return true;
+		});
+
 		kyra::RendererDescriptor rendererDescriptor;
 		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
 		rendererDescriptor.window = &m_Window;

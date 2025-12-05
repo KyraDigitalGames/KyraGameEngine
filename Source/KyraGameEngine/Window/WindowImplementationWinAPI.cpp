@@ -19,7 +19,7 @@ namespace kyra {
 		WNDCLASSEX wcex{ 0 };
 		wcex.cbSize = sizeof(wcex);
 		wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-		wcex.lpfnWndProc = DefWindowProc;
+		wcex.lpfnWndProc = WindowImplementationWinAPI::eventCallback;
 		wcex.hInstance = GetModuleHandle(nullptr);
 		wcex.lpszClassName = "KYRA_WINDOW_CLASS";
 

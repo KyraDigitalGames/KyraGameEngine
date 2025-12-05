@@ -19,7 +19,9 @@ OPTION(KYRA_RENDERER_ENABLE_METAL "Enables the Metal rendering device" OFF)
 OPTION(KYRA_RENDERER_ENABLE_DIRECTX11 "Enables the DirectX11 rendering device" OFF)
 OPTION(KYRA_RENDERER_ENABLE_DIRECTX12 "Enables the DirectX12 rendering device" OFF)
 
+if (KYRA_RENDERER_ENABLE_VULKAN)
 find_package(Vulkan REQUIRED)
+endif()
 
 # Define root and source directory paths
 SET(KYRA_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
