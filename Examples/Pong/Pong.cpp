@@ -7,6 +7,9 @@
 #include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
 #include <KyraGameEngine/Math/Vector2.hpp>
+#include <KyraGameEngine/Input/InputManager.hpp>
+#include <KyraGameEngine/Input/Keyboard.hpp>
+#include <KyraGameEngine/Scripting/Actor.hpp>
 
 class BaseNode {
 
@@ -207,6 +210,7 @@ public:
 
 };
 
+
 class AbstractSystem {
 
 public:
@@ -222,6 +226,37 @@ public:
 	virtual std::size_t getHash() const = 0;
 
 };
+
+
+class EngineContext {
+
+	std::map<std::string, std::shared_ptr<Component>> m_ComponentMap;
+	std::map<std::string, std::shared_ptr<AbstractSystem>> m_SystemMap;
+	std::map<std::string, std::shared_ptr<kyra::RenderPassProcessor>> m_RenderPassProcessorMap;
+
+public:
+
+
+};
+
+class Module {
+
+public:
+	virtual ~Module() = default;
+
+	virtual bool init(EngineContext& context) = 0;
+
+};
+
+class ScriptingModule : public Module {
+
+public:
+	virtual ~ScriptingModule() = default;
+
+	virtual bool init(EngineContext& context) = 0;
+
+};
+
 
 class SimpleSystem : public AbstractSystem {
 
@@ -265,10 +300,59 @@ public:
 	}
 };
 
+class ScriptingSystem : public AbstractSystem {
+
+public:
+
+	virtual bool init(kyra::Renderer* renderer) {
+		return true;
+	}
+
+	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) {
+		return nullptr;
+	}
+
+	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) {
+		return nullptr;
+	}
+
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) {
+		return nullptr;
+	}
+
+	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) {
+		return nullptr;
+	}
+
+	std::size_t getHash() const {
+		return typeid(ScriptingSystem).hash_code();
+	}
+
+};
+
+
+class PadPlayerActor : public kyra::Actor {
+
+public:
+
+	void update() {
+		if (kyra::Keyboard::isPressed(kyra::Key::Left)) {
+
+		}
+		if (kyra::Keyboard::isPressed(kyra::Key::Right)) {
+
+		}
+	}
+
+};
+
+	
 class Pong : public kyra::Application {
 
 	kyra::Window m_Window;
 	kyra::Renderer m_Renderer;
+	kyra::InputManager m_InputManager;
+	ScriptingSystem m_ScriptingSystem;
 	Scene m_Scene;
 	SimpleSystem m_System;
 
@@ -282,6 +366,12 @@ public:
 		windowDescriptor.height = 720;
 		if (!m_Window.init(windowDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise window");
+			return false;
+		}
+
+		kyra::InputManagerDescriptor inputManagerDescriptor;
+		inputManagerDescriptor.window = &m_Window;
+		if (!m_InputManager.init(inputManagerDescriptor)) {
 			return false;
 		}
 

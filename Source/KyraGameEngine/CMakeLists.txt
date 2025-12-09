@@ -1,5 +1,6 @@
 add_subdirectory(Log)
 add_subdirectory(Window)
+add_subdirectory(Input)
 add_subdirectory(Renderer)
 add_subdirectory(Scripting)
 add_subdirectory(Scene)

@@ -38,7 +38,11 @@ namespace kyra {
 
 	enum class Key {
 		Unknown,
-		Escape
+		Escape,
+		Left,
+		Right,
+		Up,
+		Down
 	};
 
 	enum class MouseButton {
