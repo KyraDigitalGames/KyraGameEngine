@@ -19,6 +19,10 @@ namespace kyra {
 		return true;
 	}
 
+	void VertexBufferOpenGL::update(std::size_t size, void* data) {
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+	}
+
 	void VertexBufferOpenGL::bind() {
 		glBindBuffer(GL_ARRAY_BUFFER, m_Id);
 	}

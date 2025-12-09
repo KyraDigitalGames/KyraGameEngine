@@ -15,6 +15,7 @@ namespace kyra {
 		~VertexBufferOpenGL();
 
 		bool init(const VertexBufferDescriptor& descriptor) final;
+		void update(std::size_t size, void* data);
 		void bind() final;
 
 		constexpr GLuint getId() const {

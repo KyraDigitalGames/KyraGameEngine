@@ -16,6 +16,7 @@ namespace kyra {
 		virtual ~VertexBuffer() = default;
 
 		virtual bool init(const VertexBufferDescriptor& descriptor) = 0;
+		virtual void update(std::size_t size, void* data) = 0;
 		virtual void bind() = 0;
 	};
 

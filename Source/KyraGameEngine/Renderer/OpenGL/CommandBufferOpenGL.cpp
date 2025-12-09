@@ -17,7 +17,12 @@ namespace kyra {
 		vertexBuffer->bind();
 		m_BoundVertexBuffer = vertexBuffer;
 	}
-
+	
+	void CommandBufferOpenGL::updateBuffer(std::shared_ptr<VertexBuffer> vertexBuffer, const VertexBufferDescriptor& descriptor) {
+		vertexBuffer->bind();
+		m_BoundVertexBuffer = vertexBuffer;
+		vertexBuffer->update(descriptor.size, descriptor.data);
+	}
 
 	void CommandBufferOpenGL::bindRenderPipelineState(std::shared_ptr<RenderPipelineState> renderPipelineState) {
 		renderPipelineState->bind();

@@ -6,29 +6,59 @@
 #include <KyraGameEngine/Renderer/RenderPassPresent.hpp>
 #include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
+#include <KyraGameEngine/Math/Vector2.hpp>
+
+class BaseNode {
+
+public:
+	virtual ~BaseNode() = default;
+
+	virtual const kyra::Vector2<float>& getPosition() const = 0;
+	virtual void setPosition(const kyra::Vector2<float>& position) = 0;
+	virtual const kyra::Vector2<float>& getSize() const = 0;
+	virtual void setSize(const kyra::Vector2<float>& size) = 0;
 
 
-class Node;
+};
+
 class Component {
 
-	Node* m_Parent = nullptr;
+	BaseNode* m_Parent = nullptr;
 
 public:
 	virtual ~Component() = default;
 
-	void setParent(Node* node) {
+	void setParent(BaseNode* node) {
 		m_Parent = node;
 	}
 
-	Node* getParent() {
+	BaseNode* getParent() {
 		return m_Parent;
+	}
+
+	void setPosition(const kyra::Vector2<float>& position) {
+		m_Parent->setPosition(position);
+	}
+
+	void setSize(const kyra::Vector2<float>& size) {
+		m_Parent->setSize(size);
+	}
+
+	const kyra::Vector2<float>& getPosition() const {
+		return m_Parent->getPosition();
+	}
+
+	const kyra::Vector2<float>& getSize() const {
+		return m_Parent->getSize();
 	}
 
 };
 
 
-class Node {
+class Node : public BaseNode{
 
+	kyra::Vector2<float> m_Position;
+	kyra::Vector2<float> m_Size; 
 	std::vector<std::shared_ptr<Component>> m_Components;
 
 public:
@@ -36,6 +66,22 @@ public:
 	void addComponent(std::shared_ptr<Component> component) {
 		component->setParent(this);
 		m_Components.emplace_back(component);
+	}
+
+	void setPosition(const kyra::Vector2<float>& position) {
+		m_Position = position;
+	}
+
+	const kyra::Vector2<float>& getPosition() const {
+		return m_Position;
+	}
+
+	void setSize(const kyra::Vector2<float>& size) {
+		m_Size = size;
+	}
+
+	const kyra::Vector2<float>& getSize() const {
+		return m_Size;
 	}
 
 };
@@ -79,6 +125,7 @@ public:
 
 class SimpleRenderPassProcessor : public kyra::RenderPassProcessor {
 
+	std::vector<kyra::Vector2<float>> m_VertexArray;
 	std::shared_ptr<kyra::VertexBuffer> m_VertexBuffer;
 	std::shared_ptr<kyra::RenderPipelineState> m_RenderPipelineState;
 	std::vector<SimpleMeshComponent*> m_Components;
@@ -94,18 +141,11 @@ public:
 	
 		m_Projection = kyra::Matrix4::ortho(0, 1280, 720, 0, -1, 1);
 
-		float vertices[] = {
-			200,200,
-			200,400,
-			400,400,
-			200,200,
-			400,200,
-			400,400
-		};
+		m_VertexArray.resize(18);
 
 		kyra::VertexBufferDescriptor vertexBufferDescriptor;
-		vertexBufferDescriptor.size = sizeof(vertices);
-		vertexBufferDescriptor.data = vertices;
+		vertexBufferDescriptor.size = 36*sizeof(float);
+		vertexBufferDescriptor.data = nullptr;
 		m_VertexBuffer = renderer.createVertexBuffer();
 		if (!m_VertexBuffer->init(vertexBufferDescriptor)) {
 			return false;
@@ -142,12 +182,27 @@ public:
 	}
 
 	void update(kyra::CommandBuffer* commandBuffer) final {
+		int i = 0;
 		for (auto& component : m_Components) {
-			commandBuffer->bindVertexBuffer(m_VertexBuffer);
-			commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
-			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
-			commandBuffer->draw(0, 6);
+			const kyra::Vector2<float> position = component->getPosition();
+			const kyra::Vector2<float> size = component->getSize();
+			m_VertexArray[i] = position;
+			m_VertexArray[i + 1] = { position.getX() + size.getX(), position.getY() };
+			m_VertexArray[i+2] = { position.getX() + size.getX(), position.getY() + size.getY()  };
+			m_VertexArray[i+3] = position;
+			m_VertexArray[i+4] = { position.getX(), position.getY() + size.getY() };
+			m_VertexArray[i+5] = { position.getX() + size.getX(), position.getY() + size.getY() };
+			i += 6;
 		}
+		commandBuffer->bindVertexBuffer(m_VertexBuffer);
+		kyra::VertexBufferDescriptor descriptor;
+		descriptor.data = &m_VertexArray[0];
+		descriptor.size = 36 * sizeof(float);
+		commandBuffer->updateBuffer(m_VertexBuffer, descriptor);
+
+		commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
+		commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
+		commandBuffer->draw(0, 18);
 	}
 
 };
@@ -265,16 +320,22 @@ public:
 		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
 
 		Node* ballNode = m_Scene.createNode("BallNode");
+		ballNode->setPosition({ 0,0 });
+		ballNode->setSize({ 100,100 });
 		auto simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
 		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		ballNode->addComponent(simpleComponent);
 
 		Node* pad1Node = m_Scene.createNode("Pad1Node");
+		pad1Node->setPosition({ 150,150 });
+		pad1Node->setSize({ 150,150 });
 		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
 		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		pad1Node->addComponent(simpleComponent);
 
 		Node* pad2Node = m_Scene.createNode("Pad2Node");
+		pad2Node->setPosition({ 400,400 });
+		pad2Node->setSize({ 200,200 });
 		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
 		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
 		pad2Node->addComponent(simpleComponent);
