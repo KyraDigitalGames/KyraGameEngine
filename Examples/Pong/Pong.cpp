@@ -11,94 +11,181 @@
 #include <KyraGameEngine/Input/Keyboard.hpp>
 #include <KyraGameEngine/Scripting/Actor.hpp>
 
-class BaseNode {
 
-public:
-	virtual ~BaseNode() = default;
-
-	virtual const kyra::Vector2<float>& getPosition() const = 0;
-	virtual void setPosition(const kyra::Vector2<float>& position) = 0;
-	virtual const kyra::Vector2<float>& getSize() const = 0;
-	virtual void setSize(const kyra::Vector2<float>& size) = 0;
-
-
-};
-
+class Node;
 class Component {
 
-	BaseNode* m_Parent = nullptr;
+	Node* m_Node = nullptr;
 
 public:
 	virtual ~Component() = default;
 
-	void setParent(BaseNode* node) {
-		m_Parent = node;
+	void setParent(Node* node) {
+		m_Node = node;
 	}
 
-	BaseNode* getParent() {
-		return m_Parent;
+	Node* getNode() {
+		return m_Node;
 	}
 
-	void setPosition(const kyra::Vector2<float>& position) {
-		m_Parent->setPosition(position);
+	const Node* getNode() const {
+		return m_Node;
 	}
 
-	void setSize(const kyra::Vector2<float>& size) {
-		m_Parent->setSize(size);
-	}
-
-	const kyra::Vector2<float>& getPosition() const {
-		return m_Parent->getPosition();
-	}
-
-	const kyra::Vector2<float>& getSize() const {
-		return m_Parent->getSize();
-	}
+	virtual std::size_t getHash() const = 0;
 
 };
 
 
-class Node : public BaseNode{
+class Node {
 
-	kyra::Vector2<float> m_Position;
-	kyra::Vector2<float> m_Size; 
-	std::vector<std::shared_ptr<Component>> m_Components;
+	std::map<std::size_t, Component*> m_Components;
+
+	Node* m_Parent = nullptr;
+	std::vector<Node*> m_Children;
 
 public:
 
-	void addComponent(std::shared_ptr<Component> component) {
+	std::vector<Node*>& getChildren() {
+		return m_Children;
+	}
+
+	const std::vector<Node*>& getChildren() const {
+		return m_Children;
+	}
+
+	void addComponent(Component* component) {
+		auto id = component->getHash();
 		component->setParent(this);
-		m_Components.emplace_back(component);
+		m_Components.emplace(id, component);
 	}
 
-	void setPosition(const kyra::Vector2<float>& position) {
-		m_Position = position;
+	template<class ComponentType>
+	bool hasComponent() const {
+		auto id = typeid(ComponentType).hash_code();
+		auto it = m_Components.find(id);
+		return it != m_Components.end();
 	}
 
-	const kyra::Vector2<float>& getPosition() const {
-		return m_Position;
+	template<class ComponentType>
+	ComponentType* getComponent() {
+		auto id = typeid(ComponentType).hash_code();
+		auto it = m_Components.find(id);
+		if(it != m_Components.end()) {
+			return static_cast<ComponentType*>(it->second);
+		}
+		return nullptr;
 	}
 
-	void setSize(const kyra::Vector2<float>& size) {
-		m_Size = size;
+	template<class ComponentType>
+	const ComponentType* getComponent() const {
+		auto id = typeid(ComponentType).hash_code();
+		auto it = m_Components.find(id);
+		if (it != m_Components.end()) {
+			return static_cast<ComponentType*>(it->second);
+		}
+		return nullptr;
 	}
 
-	const kyra::Vector2<float>& getSize() const {
-		return m_Size;
+	void setParent(Node* node) {
+		m_Parent = node;
+	}
+
+	Node* getParent() noexcept {
+		return m_Parent;
+	}
+
+	const Node* getParent() const noexcept {
+		return m_Parent;
 	}
 
 };
 
+class TransformComponent : public Component {
+
+	kyra::Vector3<float> m_Position;
+	kyra::Vector3<float> m_Size;
+
+	mutable kyra::Matrix4 m_LocalTransform;
+	mutable bool m_IsLocalTransformDirty = true;
+
+	mutable kyra::Matrix4 m_WorldTransform;
+	mutable bool m_IsWorldTransformDirty = true;
+
+
+	public:
+
+	void markWorldDirty() {
+		m_IsWorldTransformDirty = true;
+		for (auto* c : getNode()->getChildren()) {
+			if (c->hasComponent<TransformComponent>()) {
+				c->getComponent<TransformComponent>()->markWorldDirty();
+			}
+		}
+	}
+
+	void setPosition(const kyra::Vector3<float>& position) {
+		m_Position = position;
+		m_IsLocalTransformDirty = true;
+	}
+
+	const kyra::Vector3<float>& getPosition() const {
+		return m_Position;
+	}
+
+	void setSize(const kyra::Vector3<float>& size) {
+		m_Size = size;
+		m_IsLocalTransformDirty = true;
+	}
+
+	const kyra::Vector3<float>& getSize() const {
+		return m_Size;
+	}
+
+	const kyra::Matrix4& getTransform() const {
+		if (m_IsLocalTransformDirty) {
+			m_LocalTransform = kyra::Matrix4()
+				.scale(m_Size)
+				.translate(m_Position);
+			m_IsLocalTransformDirty = false;
+			m_IsWorldTransformDirty = true;
+		}
+		if (m_IsWorldTransformDirty) {
+			const Node* parentNode = getNode()->getParent();
+			if (parentNode) {
+				if (parentNode->hasComponent<TransformComponent>()) {
+					const TransformComponent* parentTransform = parentNode->getComponent<TransformComponent>();
+					m_WorldTransform = parentTransform->getTransform() * m_LocalTransform;
+				}
+				else {
+					m_WorldTransform = m_LocalTransform;
+				}
+			}
+			else {
+				m_WorldTransform = m_LocalTransform;
+			}
+			m_IsWorldTransformDirty = false;
+		}
+		return m_WorldTransform;
+	}
+
+	virtual std::size_t getHash() const {
+		return typeid(TransformComponent).hash_code();
+	}
+
+};
+
+
 class Scene {
 
-	std::map<std::string, Node> m_Nodes;
+	std::map<std::string, std::unique_ptr<Node>> m_Nodes;
 	kyra::RenderPipeline m_RenderPipeline;
 
 public:
 
 	Node* createNode(const std::string& id) {
-		m_Nodes[id] = Node();
-		return &m_Nodes[id];
+		auto it = m_Nodes.emplace(id, std::make_unique<Node>());
+		return (it.second) ? it.first->second.get() : nullptr;
 	}
 
 	Node* getNode(const std::string& id) {
@@ -106,7 +193,7 @@ public:
 		if (it == m_Nodes.end()) {
 			return nullptr;
 		}
-		return &(it->second);
+		return it->second.get();
 	}
 
 	void setRenderPipeline(kyra::RenderPipeline renderPipeline) {
@@ -123,12 +210,20 @@ class SimpleMeshComponent : public Component {
 
 public:
 
+	const kyra::Matrix4& getTransform() const {
+		return getNode()->getComponent<TransformComponent>()->getTransform();
+	}
+
+	virtual std::size_t getHash() const {
+		return typeid(SimpleMeshComponent).hash_code();
+	}
+
+
 };
 
 
 class SimpleRenderPassProcessor : public kyra::RenderPassProcessor {
 
-	std::vector<kyra::Vector2<float>> m_VertexArray;
 	std::shared_ptr<kyra::VertexBuffer> m_VertexBuffer;
 	std::shared_ptr<kyra::RenderPipelineState> m_RenderPipelineState;
 	std::vector<SimpleMeshComponent*> m_Components;
@@ -144,11 +239,19 @@ public:
 	
 		m_Projection = kyra::Matrix4::ortho(0, 1280, 720, 0, -1, 1);
 
-		m_VertexArray.resize(18);
+		float vertices[] = {
+			0,0,0,
+			1,0,0,
+			1,1,0,
+			0,0,0,
+			0,1,0,
+			1,1,0
+		};
+
 
 		kyra::VertexBufferDescriptor vertexBufferDescriptor;
-		vertexBufferDescriptor.size = 36*sizeof(float);
-		vertexBufferDescriptor.data = nullptr;
+		vertexBufferDescriptor.size = 18*sizeof(float);
+		vertexBufferDescriptor.data = vertices;
 		m_VertexBuffer = renderer.createVertexBuffer();
 		if (!m_VertexBuffer->init(vertexBufferDescriptor)) {
 			return false;
@@ -158,10 +261,11 @@ public:
 		vertexShader.type = kyra::ShaderType::Vertex;
 		vertexShader.language = kyra::ShaderLanguage::GLSL;
 		vertexShader.data = "#version 330 core\n"
-			"layout (location = 0) in vec2 aPos;\n"
+			"layout (location = 0) in vec3 aPos;\n"
 			"uniform mat4 m_Projection;\n"
+			"uniform mat4 m_Model;\n"
 			"void main() {\n"
-			"gl_Position = m_Projection * vec4(aPos,0.0, 1.0);\n"
+			"gl_Position = m_Projection * m_Model * vec4(aPos, 1.0);\n"
 			"}\0";
 
 		kyra::ShaderDescriptor fragmentShader;
@@ -185,163 +289,47 @@ public:
 	}
 
 	void update(kyra::CommandBuffer* commandBuffer) final {
-		int i = 0;
-		for (auto& component : m_Components) {
-			const kyra::Vector2<float> position = component->getPosition();
-			const kyra::Vector2<float> size = component->getSize();
-			m_VertexArray[i] = position;
-			m_VertexArray[i + 1] = { position.getX() + size.getX(), position.getY() };
-			m_VertexArray[i+2] = { position.getX() + size.getX(), position.getY() + size.getY()  };
-			m_VertexArray[i+3] = position;
-			m_VertexArray[i+4] = { position.getX(), position.getY() + size.getY() };
-			m_VertexArray[i+5] = { position.getX() + size.getX(), position.getY() + size.getY() };
-			i += 6;
-		}
 		commandBuffer->bindVertexBuffer(m_VertexBuffer);
-		kyra::VertexBufferDescriptor descriptor;
-		descriptor.data = &m_VertexArray[0];
-		descriptor.size = 36 * sizeof(float);
-		commandBuffer->updateBuffer(m_VertexBuffer, descriptor);
-
 		commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
-		commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
-		commandBuffer->draw(0, 18);
-	}
-
-};
-
-
-class AbstractSystem {
-
-public:
-	virtual ~AbstractSystem() = default;
-
-	virtual bool init(kyra::Renderer* renderer) = 0;
-
-	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) = 0;
-	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) = 0;
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) = 0;
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) = 0;
-	
-	virtual std::size_t getHash() const = 0;
-
-};
-
-
-class EngineContext {
-
-	std::map<std::string, std::shared_ptr<Component>> m_ComponentMap;
-	std::map<std::string, std::shared_ptr<AbstractSystem>> m_SystemMap;
-	std::map<std::string, std::shared_ptr<kyra::RenderPassProcessor>> m_RenderPassProcessorMap;
-
-public:
-
-
-};
-
-class Module {
-
-public:
-	virtual ~Module() = default;
-
-	virtual bool init(EngineContext& context) = 0;
-
-};
-
-class ScriptingModule : public Module {
-
-public:
-	virtual ~ScriptingModule() = default;
-
-	virtual bool init(EngineContext& context) = 0;
-
-};
-
-
-class SimpleSystem : public AbstractSystem {
-
-	kyra::Renderer* m_Renderer = nullptr;
-
-public:
-
-	bool init(kyra::Renderer* renderer) {
-		m_Renderer = renderer;
-		return true;
-	}
-
-	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) {
-		if (id == "SimpleMeshComponent") {
-			return std::make_shared<SimpleMeshComponent>();
+		for (auto& component : m_Components) {
+			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
+			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Model", component->getTransform());
+			commandBuffer->draw(0, 6);
 		}
-		return nullptr;
-	}
-
-	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) {
-		return nullptr;
-	}
-
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) {
-		if (id == "SimpleRenderPassProcessor") {
-			auto processor = std::make_shared<SimpleRenderPassProcessor>();
-			if (!processor->init(*m_Renderer)) {
-				return nullptr;
-			}
-			return processor;
-		}
-		return nullptr;
-	}
-	
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) {
-		return nullptr;
-	}
-
-	std::size_t getHash() const {
-		return typeid(SimpleSystem).hash_code();
-	}
-};
-
-class ScriptingSystem : public AbstractSystem {
-
-public:
-
-	virtual bool init(kyra::Renderer* renderer) {
-		return true;
-	}
-
-	virtual std::shared_ptr<Component> createComponentByString(const std::string& id) {
-		return nullptr;
-	}
-
-	virtual std::shared_ptr<Component> createComponentByHash(std::size_t hash) {
-		return nullptr;
-	}
-
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByString(const std::string& id) {
-		return nullptr;
-	}
-
-	virtual std::shared_ptr<kyra::RenderPassProcessor> createRenderPassProcessorByHash(std::size_t hash) {
-		return nullptr;
-	}
-
-	std::size_t getHash() const {
-		return typeid(ScriptingSystem).hash_code();
 	}
 
 };
 
+class TransformSystem {
 
-class PadPlayerActor : public kyra::Actor {
+	std::vector<std::unique_ptr<TransformComponent>> m_Components;
 
 public:
+
+	TransformComponent* create() {
+		m_Components.emplace_back(std::make_unique<TransformComponent>());
+		return m_Components.back().get();
+	}
 
 	void update() {
-		if (kyra::Keyboard::isPressed(kyra::Key::Left)) {
 
-		}
-		if (kyra::Keyboard::isPressed(kyra::Key::Right)) {
+	}
 
-		}
+};
+
+class SimpleMeshSystem {
+	
+	std::vector<std::unique_ptr<SimpleMeshComponent>> m_Components;
+
+public:
+
+	SimpleMeshComponent* create() {
+		m_Components.emplace_back( std::make_unique<SimpleMeshComponent>());
+		return m_Components.back().get();
+	}
+
+	void update() {
+
 	}
 
 };
@@ -352,9 +340,12 @@ class Pong : public kyra::Application {
 	kyra::Window m_Window;
 	kyra::Renderer m_Renderer;
 	kyra::InputManager m_InputManager;
-	ScriptingSystem m_ScriptingSystem;
+
 	Scene m_Scene;
-	SimpleSystem m_System;
+	TransformSystem m_TransformSystem;
+	SimpleMeshSystem m_SimpleMeshSystem;
+
+	std::shared_ptr<SimpleRenderPassProcessor> m_SimpleRenderPassProcessor;
 
 public:
 
@@ -389,10 +380,6 @@ public:
 			return false;
 		}
 
-		if (!m_System.init(&m_Renderer)) {
-			return false;
-		}
-
 		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
 		renderPipelineDescriptor.commandBuffer = m_Renderer.acquireCommandBuffer();
 		kyra::RenderPipeline renderPipeline;
@@ -400,35 +387,40 @@ public:
 			return false;
 		}
 
+		m_SimpleRenderPassProcessor = std::make_shared<SimpleRenderPassProcessor>();
+
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
 		renderPassPresentDescriptor.swapchain = m_Renderer.acquireSwapchain();
-		renderPassPresentDescriptor.processor = m_System.createRenderPassProcessorByString("SimpleRenderPassProcessor");
+		renderPassPresentDescriptor.processor = m_SimpleRenderPassProcessor;
 		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
 			return false;
 		}
 
 		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
+		if(!processor->init(m_Renderer)) {
+			return false;
+		};
 
 		Node* ballNode = m_Scene.createNode("BallNode");
-		ballNode->setPosition({ 0,0 });
-		ballNode->setSize({ 100,100 });
-		auto simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
-		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
-		ballNode->addComponent(simpleComponent);
+		ballNode->addComponent(m_TransformSystem.create());
+		ballNode->getComponent<TransformComponent>()->setPosition({ 0,0,0 });
+		ballNode->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		ballNode->addComponent(m_SimpleMeshSystem.create());
+		processor->addComponent(ballNode->getComponent<SimpleMeshComponent>());
 
 		Node* pad1Node = m_Scene.createNode("Pad1Node");
-		pad1Node->setPosition({ 150,150 });
-		pad1Node->setSize({ 150,150 });
-		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
-		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
-		pad1Node->addComponent(simpleComponent);
+		pad1Node->addComponent(m_TransformSystem.create());
+		pad1Node->getComponent<TransformComponent>()->setPosition({ 150,150,0 });
+		pad1Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		pad1Node->addComponent(m_SimpleMeshSystem.create());
+		processor->addComponent(pad1Node->getComponent<SimpleMeshComponent>());
 
 		Node* pad2Node = m_Scene.createNode("Pad2Node");
-		pad2Node->setPosition({ 400,400 });
-		pad2Node->setSize({ 200,200 });
-		simpleComponent = m_System.createComponentByString("SimpleMeshComponent");
-		processor->addComponent(static_cast<SimpleMeshComponent*>(simpleComponent.get()));
-		pad2Node->addComponent(simpleComponent);
+		pad2Node->addComponent(m_TransformSystem.create());
+		pad2Node->getComponent<TransformComponent>()->setPosition({ 300,300,0 });
+		pad2Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		pad2Node->addComponent(m_SimpleMeshSystem.create());
+		processor->addComponent(pad2Node->getComponent<SimpleMeshComponent>());
 
 		m_Scene.setRenderPipeline(renderPipeline);
 
@@ -445,6 +437,8 @@ public:
 			quit();
 		}
 		m_Window.processEvents();
+		m_TransformSystem.update();
+		m_SimpleMeshSystem.update();
 		m_Scene.update();
 	}
 	

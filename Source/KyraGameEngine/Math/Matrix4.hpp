@@ -2,6 +2,8 @@
 #ifndef KYRAGAMEENGINE_MATH_MATRIX4_HPP
 #define KYRAGAMEENGINE_MATH_MATRIX4_HPP
 
+#include "Vector3.hpp"
+
 namespace kyra {
 
     class Matrix4 {
@@ -30,6 +32,51 @@ namespace kyra {
             m.m_Data[15] = 1.0f;
             return m;
         }
+
+        Matrix4 operator*(const Matrix4& other) const {
+            Matrix4 result;
+            for (int row = 0; row < 4; ++row) {
+                for (int col = 0; col < 4; ++col) {
+                    result.m_Data[col + row * 4] =
+                        m_Data[0 + row * 4] * other.m_Data[col + 0 * 4] +
+                        m_Data[1 + row * 4] * other.m_Data[col + 1 * 4] +
+                        m_Data[2 + row * 4] * other.m_Data[col + 2 * 4] +
+                        m_Data[3 + row * 4] * other.m_Data[col + 3 * 4];
+                }
+            }
+            return result;
+		}
+
+        Matrix4& operator*=(const Matrix4& other) {
+            *this = *this * other;
+            return *this;
+		}
+
+        Matrix4 transpose() const {
+            Matrix4 result;
+            for (int row = 0; row < 4; ++row) {
+                for (int col = 0; col < 4; ++col) {
+                    result.m_Data[row + col * 4] = m_Data[col + row * 4];
+                }
+            }
+            return result;
+		}
+
+        Matrix4 translate(const Vector3<float>& vec) const {
+            Matrix4 translation;
+            translation.m_Data[12] = vec.getX();
+            translation.m_Data[13] = vec.getY();
+            translation.m_Data[14] = vec.getZ();
+            return (*this) * translation;
+        }
+
+        Matrix4 scale(const Vector3<float>& vec) const {
+            Matrix4 scaling;
+            scaling.m_Data[0] = vec.getX();
+            scaling.m_Data[5] = vec.getY();
+            scaling.m_Data[10] = vec.getZ();
+            return (*this) * scaling;
+		}
 
         const float* getDataPtr() const {
             return m_Data;
