@@ -2,10 +2,11 @@
 #define KYRAGAMEENGINE_WINDOW_WINDOW_HPP
 
 #include "WindowImplementation.hpp"
+#include <KyraGameEngine/Core/System.hpp>
 
 namespace kyra {
 
-	class Window {
+	class Window : public System {
 
 		std::unique_ptr<WindowImplementation> m_Implementation;
 

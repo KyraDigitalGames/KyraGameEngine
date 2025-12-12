@@ -5,12 +5,14 @@
 #include <vector>
 #include <memory>
 
+#include <KyraGameEngine/Core/SystemManager.hpp>
+
 namespace kyra {
 
 	class RenderPass {
 
-	public:
 
+	public:
 		virtual ~RenderPass() = default;
 
 		virtual void beginDraw(CommandBuffer* commandBuffer) = 0;

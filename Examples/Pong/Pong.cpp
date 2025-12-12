@@ -10,7 +10,8 @@
 #include <KyraGameEngine/Input/InputManager.hpp>
 #include <KyraGameEngine/Input/Keyboard.hpp>
 #include <KyraGameEngine/Scripting/Actor.hpp>
-
+#include <KyraGameEngine/Core/AbstractSystem.hpp>
+#include <KyraGameEngine/Core/System.hpp>
 
 class Node;
 class Component {
@@ -175,8 +176,68 @@ class TransformComponent : public Component {
 
 };
 
+class ScriptComponentInterface : public Component {
 
-class Scene {
+public:
+	virtual ~ScriptComponentInterface() = default;
+
+	virtual void update() = 0;
+};
+
+class ScriptComponentFactoryInterface {
+
+public:
+	virtual ~ScriptComponentFactoryInterface() = default;
+
+	virtual std::unique_ptr<ScriptComponentInterface> create() = 0;
+
+};
+
+template<class ScriptComponentType>
+class ScriptComponentFactory : public ScriptComponentFactoryInterface {
+
+public:
+
+	std::unique_ptr<ScriptComponentInterface> create() final {
+		return std::make_unique<ScriptComponentType>();
+	}
+};
+
+class ScriptSystem : public kyra::System {
+
+	std::map<std::size_t, std::unique_ptr<ScriptComponentFactoryInterface>> m_Factories;
+	std::vector<std::unique_ptr<ScriptComponentInterface>> m_Components;
+
+public:
+
+	template<class ScriptComponentType>
+	void registerScriptComponentType() {
+		auto id = typeid(ScriptComponentType).hash_code();
+		m_Factories.emplace(id, std::make_unique<ScriptComponentFactory<ScriptComponentType>>());
+	}
+
+	template<class ScriptComponentType> 
+	ScriptComponentType* create() {
+		m_Components.emplace_back(m_Factories[typeid(ScriptComponentType).hash_code()]->create());
+		return static_cast<ScriptComponentType*>(m_Components.back().get());
+	}
+
+	void update() {
+		for (auto& component : m_Components) {
+			component->update();
+		}
+	}
+
+};
+
+class ScriptComponent : public ScriptComponentInterface {
+
+public:
+
+};
+
+
+class Scene : public kyra::System {
 
 	std::map<std::string, std::unique_ptr<Node>> m_Nodes;
 	kyra::RenderPipeline m_RenderPipeline;
@@ -222,18 +283,34 @@ public:
 };
 
 
+class SimpleMeshSystem : public kyra::System {
+
+	std::vector<std::unique_ptr<SimpleMeshComponent>> m_Components;
+
+public:
+
+	SimpleMeshComponent* create() {
+		m_Components.emplace_back(std::make_unique<SimpleMeshComponent>());
+		return m_Components.back().get();
+	}
+
+	std::vector<std::unique_ptr<SimpleMeshComponent>>& getComponents() {
+		return m_Components;
+	}
+
+	void update() {
+
+	}
+
+};
+
 class SimpleRenderPassProcessor : public kyra::RenderPassProcessor {
 
 	std::shared_ptr<kyra::VertexBuffer> m_VertexBuffer;
 	std::shared_ptr<kyra::RenderPipelineState> m_RenderPipelineState;
-	std::vector<SimpleMeshComponent*> m_Components;
 	kyra::Matrix4 m_Projection;
 
 public:
-
-	void addComponent(SimpleMeshComponent* component) {
-		m_Components.push_back(component);
-	}
 
 	bool init(kyra::Renderer& renderer) final {
 	
@@ -291,7 +368,7 @@ public:
 	void update(kyra::CommandBuffer* commandBuffer) final {
 		commandBuffer->bindVertexBuffer(m_VertexBuffer);
 		commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
-		for (auto& component : m_Components) {
+		for (auto& component : getSystem<SimpleMeshSystem>()->getComponents()) {
 			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
 			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Model", component->getTransform());
 			commandBuffer->draw(0, 6);
@@ -300,7 +377,7 @@ public:
 
 };
 
-class TransformSystem {
+class TransformSystem : public kyra::System {
 
 	std::vector<std::unique_ptr<TransformComponent>> m_Components;
 
@@ -317,19 +394,78 @@ public:
 
 };
 
-class SimpleMeshSystem {
+class PhysicsComponent : public Component {
 	
-	std::vector<std::unique_ptr<SimpleMeshComponent>> m_Components;
+	public:
+	
+	virtual std::size_t getHash() const {
+		return typeid(PhysicsComponent).hash_code();
+	}
+
+};
+
+class PhysicsSystem : public kyra::System {
+
+	public:
+	void update() {
+
+	}
+
+};
+
+
+
+
+
+class PlayerPadScriptComponent : public ScriptComponent {
 
 public:
 
-	SimpleMeshComponent* create() {
-		m_Components.emplace_back( std::make_unique<SimpleMeshComponent>());
-		return m_Components.back().get();
+	void update() final {
+	Node* node = getNode();
+		if(node->hasComponent<TransformComponent>()) {
+			TransformComponent* transform = node->getComponent<TransformComponent>();
+			kyra::Vector3<float> position = transform->getPosition();
+			if(kyra::Keyboard::isPressed(kyra::Key::Left)) {
+				position = kyra::Vector3<float>(position.getX() - 1, 0, 0);
+			}
+			if(kyra::Keyboard::isPressed(kyra::Key::Right)) {
+				position = kyra::Vector3<float>(position.getX() + 1, 0, 0);
+			}
+			transform->setPosition(position);
+			transform->markWorldDirty();
+		}
 	}
 
-	void update() {
+	virtual std::size_t getHash() const {
+		return typeid(PlayerPadScriptComponent).hash_code();
+	}
 
+};
+
+class AIPadScriptComponent : public ScriptComponent {
+	
+	public:
+	
+	void update() final {
+		// AI logic here
+	}
+	virtual std::size_t getHash() const {
+		return typeid(AIPadScriptComponent).hash_code();
+	}
+
+};
+
+class BallScriptComponent : public ScriptComponent {
+
+public:
+
+	void update() final {
+	
+	}
+
+	virtual std::size_t getHash() const {
+		return typeid(BallScriptComponent).hash_code();
 	}
 
 };
@@ -337,11 +473,12 @@ public:
 	
 class Pong : public kyra::Application {
 
-	kyra::Window m_Window;
-	kyra::Renderer m_Renderer;
-	kyra::InputManager m_InputManager;
+	kyra::Window* m_Window;
+	kyra::Renderer* m_Renderer;
+	kyra::InputManager* m_InputManager;
+	ScriptSystem* m_ScriptSystem;
 
-	Scene m_Scene;
+	Scene* m_Scene;
 	TransformSystem m_TransformSystem;
 	SimpleMeshSystem m_SimpleMeshSystem;
 
@@ -351,37 +488,44 @@ public:
 
 	bool onSetup() final {
 		
+	
+		m_Window = registerSystem<kyra::Window>();
 		kyra::WindowDescriptor windowDescriptor;
 		windowDescriptor.title = "Pong";
 		windowDescriptor.width = 1280;
 		windowDescriptor.height = 720;
-		if (!m_Window.init(windowDescriptor)) {
+		if (!m_Window->init(windowDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise window");
 			return false;
 		}
 
+		m_InputManager = registerSystem<kyra::InputManager>();
 		kyra::InputManagerDescriptor inputManagerDescriptor;
-		inputManagerDescriptor.window = &m_Window;
-		if (!m_InputManager.init(inputManagerDescriptor)) {
+		inputManagerDescriptor.window = m_Window;
+		if (!m_InputManager->init(inputManagerDescriptor)) {
 			return false;
 		}
 
 		kyra::WindowEvents::onKeyUp.connect(this, [&](kyra::Key key) {
-			if(key == kyra::Key::Escape)
-			quit();
-			return true;
+			if (key == kyra::Key::Escape) {
+				quit();
+				return true;
+			}
+			return false;
 		});
 
+		
+		m_Renderer = registerSystem<kyra::Renderer>();
 		kyra::RendererDescriptor rendererDescriptor;
 		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
-		rendererDescriptor.window = &m_Window;
-		if (!m_Renderer.init(rendererDescriptor)) {
+		rendererDescriptor.window = m_Window;
+		if (!m_Renderer->init(rendererDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise renderer");
 			return false;
 		}
 
 		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
-		renderPipelineDescriptor.commandBuffer = m_Renderer.acquireCommandBuffer();
+		renderPipelineDescriptor.commandBuffer = m_Renderer->acquireCommandBuffer();
 		kyra::RenderPipeline renderPipeline;
 		if (!renderPipeline.init(renderPipelineDescriptor)) {
 			return false;
@@ -390,39 +534,43 @@ public:
 		m_SimpleRenderPassProcessor = std::make_shared<SimpleRenderPassProcessor>();
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
-		renderPassPresentDescriptor.swapchain = m_Renderer.acquireSwapchain();
+		renderPassPresentDescriptor.swapchain = m_Renderer->acquireSwapchain();
 		renderPassPresentDescriptor.processor = m_SimpleRenderPassProcessor;
 		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
 			return false;
 		}
 
 		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
-		if(!processor->init(m_Renderer)) {
+		if(!processor->init(*m_Renderer)) {
 			return false;
 		};
 
-		Node* ballNode = m_Scene.createNode("BallNode");
+		m_ScriptSystem = registerSystem<ScriptSystem>();
+		m_ScriptSystem->registerScriptComponentType<PlayerPadScriptComponent>();
+
+		m_Scene = registerSystem<Scene>();
+	
+		Node* ballNode = m_Scene->createNode("BallNode");
 		ballNode->addComponent(m_TransformSystem.create());
 		ballNode->getComponent<TransformComponent>()->setPosition({ 0,0,0 });
 		ballNode->getComponent<TransformComponent>()->setSize({ 100,100,0 });
 		ballNode->addComponent(m_SimpleMeshSystem.create());
-		processor->addComponent(ballNode->getComponent<SimpleMeshComponent>());
 
-		Node* pad1Node = m_Scene.createNode("Pad1Node");
+		Node* pad1Node = m_Scene->createNode("Pad1Node");
 		pad1Node->addComponent(m_TransformSystem.create());
 		pad1Node->getComponent<TransformComponent>()->setPosition({ 150,150,0 });
 		pad1Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
 		pad1Node->addComponent(m_SimpleMeshSystem.create());
-		processor->addComponent(pad1Node->getComponent<SimpleMeshComponent>());
+		pad1Node->addComponent(m_ScriptSystem->create<PlayerPadScriptComponent>());
 
-		Node* pad2Node = m_Scene.createNode("Pad2Node");
+		Node* pad2Node = m_Scene->createNode("Pad2Node");
 		pad2Node->addComponent(m_TransformSystem.create());
 		pad2Node->getComponent<TransformComponent>()->setPosition({ 300,300,0 });
 		pad2Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
 		pad2Node->addComponent(m_SimpleMeshSystem.create());
-		processor->addComponent(pad2Node->getComponent<SimpleMeshComponent>());
+		pad1Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
 
-		m_Scene.setRenderPipeline(renderPipeline);
+		m_Scene->setRenderPipeline(renderPipeline);
 
 		return true;
 	}
@@ -433,13 +581,14 @@ public:
 	}
 	
 	virtual void onUpdate() final {
-		if (!m_Window.isOpen()) {
+		if (!m_Window->isOpen()) {
 			quit();
 		}
-		m_Window.processEvents();
+		m_Window->processEvents();
 		m_TransformSystem.update();
 		m_SimpleMeshSystem.update();
-		m_Scene.update();
+		m_ScriptSystem->update();
+		m_Scene->update();
 	}
 	
 	virtual void onExit() final {

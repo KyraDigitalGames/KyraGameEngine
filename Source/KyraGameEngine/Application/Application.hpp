@@ -2,18 +2,25 @@
 #define KYRAGAMEENGINE_APPLICATION_APPLICATION_HPP
 
 #include <KyraGameEngine/Log/Logger.hpp>
+#include <KyraGameEngine/Core/SystemManager.hpp>
 
 namespace kyra {
 
 	class Application {
 
-		bool m_IsRunning = false;
+	bool m_IsRunning = false;
+    SystemManager m_SystemManager;
 
 	public:
 		virtual ~Application();
 
-		virtual bool onSetup() = 0;
-		virtual void onStart() = 0;
+    template<class SystemType>
+    SystemType* registerSystem() {
+      return m_SystemManager.registerSystem<SystemType>();
+    }
+
+	virtual bool onSetup() = 0;
+	virtual void onStart() = 0;
 		virtual void onUpdate() = 0;
 		virtual void onExit() = 0;
 

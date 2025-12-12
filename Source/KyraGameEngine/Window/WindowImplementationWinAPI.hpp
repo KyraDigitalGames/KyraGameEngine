@@ -3,6 +3,7 @@
 
 #include "WindowImplementation.hpp"
 #include <Windows.h>
+#include <iostream>
 
 namespace kyra {
 
@@ -12,8 +13,15 @@ namespace kyra {
 		HWND m_Handle = 0;
 
 		static constexpr Key convertKey(WPARAM wparam) {
-			if (wparam == VK_ESCAPE) {
-				return Key::Escape;
+			switch (wparam) {
+				case VK_LEFT:
+					return Key::Left;
+				case VK_RIGHT:
+					return Key::Right;
+				case VK_UP:
+					return Key::Up;
+				case VK_DOWN:
+					return Key::Down;
 			}
 			return Key::Unknown;
 		}

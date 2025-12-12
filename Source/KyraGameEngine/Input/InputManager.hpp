@@ -2,6 +2,8 @@
 #define KYRAGAMEENGINE_INPUT_INPUTMANAGER_HPP
 
 #include <KyraGameEngine/Window/Window.hpp>
+#include <KyraGameEngine/Core/System.hpp>
+#include "Keyboard.hpp"
 
 namespace kyra {
 
@@ -9,7 +11,7 @@ namespace kyra {
 		Window* window = nullptr;
 	};
 
-	class InputManager {
+	class InputManager : public System {
 
 	public:
 		bool init(InputManagerDescriptor& descriptor) {
@@ -18,11 +20,13 @@ namespace kyra {
 				return false;
 			}
 
-			kyra::WindowEvents::onKeyDown.connect(this, [&](kyra::Key key) {
+			kyra::WindowEvents::onKeyDown.connect(this, [](kyra::Key key) {
+				Keyboard::setKeyState(key, true);
 				return false;
 			});
 
-			kyra::WindowEvents::onKeyUp.connect(this, [&](kyra::Key key) {
+			kyra::WindowEvents::onKeyUp.connect(this, [](kyra::Key key) {
+				Keyboard::setKeyState(key, false);
 				return false;
 			});
 

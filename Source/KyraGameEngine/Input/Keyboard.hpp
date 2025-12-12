@@ -10,15 +10,12 @@ namespace kyra {
 
 		static std::map<Key, bool> m_KeyMap;
 
+
 	public:
 
-		static void setKeyState(Key key, bool isPressed) {
+		static void setKeyState(Key key, bool isPressed);
 
-		}
-
-		static bool isPressed(Key key) {
-			return false;
-		}
+		static bool isPressed(Key key);
 
 	};
 

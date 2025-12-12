@@ -6,6 +6,7 @@
 #include "VertexBuffer.hpp"
 #include "RenderPipelineState.hpp"
 #include <KyraGameEngine/Window/Window.hpp>
+#include <KyraGameEngine/Core/System.hpp>
 #include <memory>
 
 namespace kyra {
@@ -23,7 +24,7 @@ namespace kyra {
 		Window* window = nullptr;
 	};
 
-	class Renderer {
+	class Renderer : public System {
 
 		std::unique_ptr<RenderDeviceImplementation> m_Implementation;
 		RenderPipeline m_RenderPipeline;
