@@ -7,6 +7,8 @@ namespace kyra {
     
     public:
     virtual ~AbstractSystem() = default;
+
+    virtual void update() = 0;
     
   };
   

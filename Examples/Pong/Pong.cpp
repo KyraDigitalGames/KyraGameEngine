@@ -368,7 +368,8 @@ public:
 	void update(kyra::CommandBuffer* commandBuffer) final {
 		commandBuffer->bindVertexBuffer(m_VertexBuffer);
 		commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
-		for (auto& component : getSystem<SimpleMeshSystem>()->getComponents()) {
+		auto simpleMeshSystem = getSystem<SimpleMeshSystem>();
+		for (auto& component : simpleMeshSystem->getComponents()) {
 			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
 			commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Model", component->getTransform());
 			commandBuffer->draw(0, 6);
@@ -427,10 +428,10 @@ public:
 			TransformComponent* transform = node->getComponent<TransformComponent>();
 			kyra::Vector3<float> position = transform->getPosition();
 			if(kyra::Keyboard::isPressed(kyra::Key::Left)) {
-				position = kyra::Vector3<float>(position.getX() - 1, 0, 0);
+				position = kyra::Vector3<float>(position.getX() - 5, 0, 0);
 			}
 			if(kyra::Keyboard::isPressed(kyra::Key::Right)) {
-				position = kyra::Vector3<float>(position.getX() + 1, 0, 0);
+				position = kyra::Vector3<float>(position.getX() + 5, 0, 0);
 			}
 			transform->setPosition(position);
 			transform->markWorldDirty();
@@ -479,8 +480,8 @@ class Pong : public kyra::Application {
 	ScriptSystem* m_ScriptSystem;
 
 	Scene* m_Scene;
-	TransformSystem m_TransformSystem;
-	SimpleMeshSystem m_SimpleMeshSystem;
+	TransformSystem* m_TransformSystem;
+	SimpleMeshSystem* m_SimpleMeshSystem;
 
 	std::shared_ptr<SimpleRenderPassProcessor> m_SimpleRenderPassProcessor;
 
@@ -514,6 +515,11 @@ public:
 			return false;
 		});
 
+		kyra::WindowEvents::onClose.connect(this, [&]() {
+			quit();
+			return true;
+		});
+
 		
 		m_Renderer = registerSystem<kyra::Renderer>();
 		kyra::RendererDescriptor rendererDescriptor;
@@ -531,6 +537,8 @@ public:
 			return false;
 		}
 
+		m_SimpleMeshSystem = registerSystem<SimpleMeshSystem>();
+
 		m_SimpleRenderPassProcessor = std::make_shared<SimpleRenderPassProcessor>();
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
@@ -541,33 +549,37 @@ public:
 		}
 
 		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
+		processor->setSystemManager(getSystemManager());
 		if(!processor->init(*m_Renderer)) {
 			return false;
 		};
 
 		m_ScriptSystem = registerSystem<ScriptSystem>();
 		m_ScriptSystem->registerScriptComponentType<PlayerPadScriptComponent>();
+		m_ScriptSystem->registerScriptComponentType<AIPadScriptComponent>();
+
+		m_TransformSystem = registerSystem<TransformSystem>();
 
 		m_Scene = registerSystem<Scene>();
 	
 		Node* ballNode = m_Scene->createNode("BallNode");
-		ballNode->addComponent(m_TransformSystem.create());
+		ballNode->addComponent(m_TransformSystem->create());
 		ballNode->getComponent<TransformComponent>()->setPosition({ 0,0,0 });
 		ballNode->getComponent<TransformComponent>()->setSize({ 100,100,0 });
-		ballNode->addComponent(m_SimpleMeshSystem.create());
+		ballNode->addComponent(m_SimpleMeshSystem->create());
 
 		Node* pad1Node = m_Scene->createNode("Pad1Node");
-		pad1Node->addComponent(m_TransformSystem.create());
+		pad1Node->addComponent(m_TransformSystem->create());
 		pad1Node->getComponent<TransformComponent>()->setPosition({ 150,150,0 });
 		pad1Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
-		pad1Node->addComponent(m_SimpleMeshSystem.create());
+		pad1Node->addComponent(m_SimpleMeshSystem->create());
 		pad1Node->addComponent(m_ScriptSystem->create<PlayerPadScriptComponent>());
 
 		Node* pad2Node = m_Scene->createNode("Pad2Node");
-		pad2Node->addComponent(m_TransformSystem.create());
+		pad2Node->addComponent(m_TransformSystem->create());
 		pad2Node->getComponent<TransformComponent>()->setPosition({ 300,300,0 });
 		pad2Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
-		pad2Node->addComponent(m_SimpleMeshSystem.create());
+		pad2Node->addComponent(m_SimpleMeshSystem->create());
 		pad1Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
 
 		m_Scene->setRenderPipeline(renderPipeline);
@@ -578,17 +590,6 @@ public:
 
 	virtual void onStart() final {
 	
-	}
-	
-	virtual void onUpdate() final {
-		if (!m_Window->isOpen()) {
-			quit();
-		}
-		m_Window->processEvents();
-		m_TransformSystem.update();
-		m_SimpleMeshSystem.update();
-		m_ScriptSystem->update();
-		m_Scene->update();
 	}
 	
 	virtual void onExit() final {

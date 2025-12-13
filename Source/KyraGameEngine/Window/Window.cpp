@@ -22,7 +22,7 @@ namespace kyra {
 		return false;
 	}
 
-	void Window::processEvents() {
+	void Window::update() {
 		assert(m_Implementation);
 		if (m_Implementation) {
 			m_Implementation->processEvents();

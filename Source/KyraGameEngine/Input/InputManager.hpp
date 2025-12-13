@@ -33,6 +33,10 @@ namespace kyra {
 			return true;
 		}
 
+		void update() {
+
+		}
+
 	};
 
 }

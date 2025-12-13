@@ -7,6 +7,10 @@ namespace kyra {
 		Logger::get().stop();
 	}
 
+	void Application::update() {
+		m_SystemManager.update();
+	}
+
 	int Application::run(int argc, char** argv)
 	{
 		//Initialise Logging System
@@ -25,7 +29,7 @@ namespace kyra {
 		m_IsRunning = true;
 		onStart();
 		while (m_IsRunning) {
-			onUpdate();
+			update();
 		}
 
 		onExit();

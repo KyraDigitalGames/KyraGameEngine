@@ -22,6 +22,8 @@ namespace kyra {
 					return Key::Up;
 				case VK_DOWN:
 					return Key::Down;
+				case VK_ESCAPE:
+					return Key::Escape;
 			}
 			return Key::Unknown;
 		}

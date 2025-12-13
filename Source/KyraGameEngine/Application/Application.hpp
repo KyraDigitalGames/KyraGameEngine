@@ -8,22 +8,28 @@ namespace kyra {
 
 	class Application {
 
-	bool m_IsRunning = false;
-    SystemManager m_SystemManager;
+		bool m_IsRunning = false;
+		SystemManager m_SystemManager;
 
-	public:
-		virtual ~Application();
+		public:
+			virtual ~Application();
 
-    template<class SystemType>
-    SystemType* registerSystem() {
-      return m_SystemManager.registerSystem<SystemType>();
-    }
+		template<class SystemType>
+		SystemType* registerSystem() {
+		  return m_SystemManager.registerSystem<SystemType>();
+		}
 
-	virtual bool onSetup() = 0;
-	virtual void onStart() = 0;
-		virtual void onUpdate() = 0;
+	
+		SystemManager* getSystemManager() {
+			return &m_SystemManager;
+		}
+
+
+		virtual bool onSetup() = 0;
+		virtual void onStart() = 0;
 		virtual void onExit() = 0;
 
+		void update();
 		int run(int argc, char** argv);
 		void quit();
 	};

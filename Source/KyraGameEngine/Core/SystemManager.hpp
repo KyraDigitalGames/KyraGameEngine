@@ -30,6 +30,12 @@ namespace kyra {
       }
       return nullptr;
     }
+
+    void update() {
+        for (auto& system : m_SystemMap) {
+            system.second->update();
+        }
+    }
     
   };
   
