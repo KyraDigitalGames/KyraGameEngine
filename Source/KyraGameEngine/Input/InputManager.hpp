@@ -33,7 +33,7 @@ namespace kyra {
 			return true;
 		}
 
-		void update() {
+		void update(float deltaTime) {
 
 		}
 

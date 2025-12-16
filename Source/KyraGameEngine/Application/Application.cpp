@@ -1,5 +1,6 @@
 
 #include "Application.hpp"
+#include <chrono>
 
 namespace kyra {
 
@@ -8,7 +9,11 @@ namespace kyra {
 	}
 
 	void Application::update() {
-		m_SystemManager.update();
+		static auto previousTime = std::chrono::high_resolution_clock::now();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<float> deltaTime = currentTime - previousTime;
+		previousTime = currentTime;
+		m_SystemManager.update(deltaTime.count());
 	}
 
 	int Application::run(int argc, char** argv)

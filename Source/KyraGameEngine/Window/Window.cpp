@@ -22,7 +22,7 @@ namespace kyra {
 		return false;
 	}
 
-	void Window::update() {
+	void Window::update(float deltaTime) {
 		assert(m_Implementation);
 		if (m_Implementation) {
 			m_Implementation->processEvents();

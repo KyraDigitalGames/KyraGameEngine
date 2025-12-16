@@ -8,7 +8,7 @@ namespace kyra {
     public:
     virtual ~AbstractSystem() = default;
 
-    virtual void update() = 0;
+    virtual void update(float deltaTime) = 0;
     
   };
   

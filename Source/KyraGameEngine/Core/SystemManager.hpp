@@ -31,9 +31,9 @@ namespace kyra {
       return nullptr;
     }
 
-    void update() {
+    void update(float deltaTime) {
         for (auto& system : m_SystemMap) {
-            system.second->update();
+            system.second->update(deltaTime);
         }
     }
     

@@ -181,7 +181,7 @@ class ScriptComponentInterface : public Component {
 public:
 	virtual ~ScriptComponentInterface() = default;
 
-	virtual void update() = 0;
+	virtual void update(float deltaTime) = 0;
 };
 
 class ScriptComponentFactoryInterface {
@@ -222,9 +222,9 @@ public:
 		return static_cast<ScriptComponentType*>(m_Components.back().get());
 	}
 
-	void update() {
+	void update(float deltaTime) {
 		for (auto& component : m_Components) {
-			component->update();
+			component->update(deltaTime);
 		}
 	}
 
@@ -261,7 +261,7 @@ public:
 		m_RenderPipeline = renderPipeline;
 	}
 
-	void update() {
+	void update(float deltaTime) {
 		m_RenderPipeline.renderFrame();
 	}
 
@@ -298,7 +298,7 @@ public:
 		return m_Components;
 	}
 
-	void update() {
+	void update(float deltaTime) {
 
 	}
 
@@ -389,7 +389,7 @@ public:
 		return m_Components.back().get();
 	}
 
-	void update() {
+	void update(float deltaTime) final {
 
 	}
 
@@ -408,7 +408,7 @@ class PhysicsComponent : public Component {
 class PhysicsSystem : public kyra::System {
 
 	public:
-	void update() {
+	void update(float deltaTime) final {
 
 	}
 
@@ -422,16 +422,16 @@ class PlayerPadScriptComponent : public ScriptComponent {
 
 public:
 
-	void update() final {
+	void update(float deltaTime) final {
 	Node* node = getNode();
 		if(node->hasComponent<TransformComponent>()) {
 			TransformComponent* transform = node->getComponent<TransformComponent>();
 			kyra::Vector3<float> position = transform->getPosition();
 			if(kyra::Keyboard::isPressed(kyra::Key::Left)) {
-				position = kyra::Vector3<float>(position.getX() - 5, 0, 0);
+				position = kyra::Vector3<float>(position.getX() - (500*deltaTime), 0, 0);
 			}
 			if(kyra::Keyboard::isPressed(kyra::Key::Right)) {
-				position = kyra::Vector3<float>(position.getX() + 5, 0, 0);
+				position = kyra::Vector3<float>(position.getX() + (500*deltaTime), 0, 0);
 			}
 			transform->setPosition(position);
 			transform->markWorldDirty();
@@ -448,7 +448,7 @@ class AIPadScriptComponent : public ScriptComponent {
 	
 	public:
 	
-	void update() final {
+	void update(float deltaTime) final {
 		// AI logic here
 	}
 	virtual std::size_t getHash() const {
@@ -461,7 +461,7 @@ class BallScriptComponent : public ScriptComponent {
 
 public:
 
-	void update() final {
+	void update(float deltaTime) final {
 	
 	}
 
@@ -520,6 +520,13 @@ public:
 			return true;
 		});
 
+		m_ScriptSystem = registerSystem<ScriptSystem>();
+		m_ScriptSystem->registerScriptComponentType<PlayerPadScriptComponent>();
+		m_ScriptSystem->registerScriptComponentType<AIPadScriptComponent>();
+
+		m_TransformSystem = registerSystem<TransformSystem>();
+
+		m_Scene = registerSystem<Scene>();
 		
 		m_Renderer = registerSystem<kyra::Renderer>();
 		kyra::RendererDescriptor rendererDescriptor;
@@ -554,13 +561,6 @@ public:
 			return false;
 		};
 
-		m_ScriptSystem = registerSystem<ScriptSystem>();
-		m_ScriptSystem->registerScriptComponentType<PlayerPadScriptComponent>();
-		m_ScriptSystem->registerScriptComponentType<AIPadScriptComponent>();
-
-		m_TransformSystem = registerSystem<TransformSystem>();
-
-		m_Scene = registerSystem<Scene>();
 	
 		Node* ballNode = m_Scene->createNode("BallNode");
 		ballNode->addComponent(m_TransformSystem->create());
@@ -580,7 +580,7 @@ public:
 		pad2Node->getComponent<TransformComponent>()->setPosition({ 300,300,0 });
 		pad2Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
 		pad2Node->addComponent(m_SimpleMeshSystem->create());
-		pad1Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
+		pad2Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
 
 		m_Scene->setRenderPipeline(renderPipeline);
 

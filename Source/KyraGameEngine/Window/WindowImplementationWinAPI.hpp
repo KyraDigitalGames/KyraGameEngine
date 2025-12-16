@@ -24,6 +24,15 @@ namespace kyra {
 					return Key::Down;
 				case VK_ESCAPE:
 					return Key::Escape;
+				case VK_SPACE:
+					return Key::Space;
+				case VK_ACCEPT:
+					return Key::Enter;
+				case VK_RETURN:
+					return Key::Enter;
+				case VK_BACK:
+					return Key::Back;
+
 			}
 			return Key::Unknown;
 		}

@@ -14,7 +14,7 @@ namespace kyra {
 
 		bool init(const WindowDescriptor& windowDescriptor);
 		bool isOpen() const;
-		void update();
+		void update(float deltaTime);
 		std::size_t getHandle() const;
 	};
 

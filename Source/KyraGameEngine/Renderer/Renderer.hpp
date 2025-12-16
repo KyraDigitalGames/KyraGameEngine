@@ -41,7 +41,7 @@ namespace kyra {
 		std::shared_ptr<RenderPipelineState> createRenderPipelineState();
 		
 		void setRenderPipeline(RenderPipeline renderPipeline);
-		void update();
+		void update(float deltaTime);
 	};
 
 }

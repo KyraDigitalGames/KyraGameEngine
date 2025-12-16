@@ -90,7 +90,7 @@ namespace kyra {
 		m_RenderPipeline = renderPipeline;
 	}
 
-	void Renderer::update() {
+	void Renderer::update(float deltaTime) {
 		m_RenderPipeline.renderFrame();
 	}
 

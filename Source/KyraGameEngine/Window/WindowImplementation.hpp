@@ -42,7 +42,10 @@ namespace kyra {
 		Left,
 		Right,
 		Up,
-		Down
+		Down,
+		Space,
+		Enter,
+		Back
 	};
 
 	enum class MouseButton {

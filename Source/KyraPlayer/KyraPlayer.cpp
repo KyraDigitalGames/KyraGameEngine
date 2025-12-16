@@ -11,8 +11,8 @@
 
 class KyraPlayer : public kyra::Application {
 
-	kyra::Window m_Window;
-	kyra::Renderer m_Renderer;
+	kyra::Window* m_Window;
+	kyra::Renderer* m_Renderer;
 
 	kyra::GameModule m_Module;
 
@@ -40,32 +40,35 @@ public:
 		windowDescriptor.title = "Kyra Game Engine";
 		windowDescriptor.width = 1280;
 		windowDescriptor.height = 720;
-		if (!m_Window.init(windowDescriptor)) {
+		m_Window = registerSystem<kyra::Window>();
+		if (!m_Window->init(windowDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise window");
 			return false;
 		}
 
+
 		kyra::RendererDescriptor rendererDescriptor;
 		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
-		rendererDescriptor.window = &m_Window;
-		if (!m_Renderer.init(rendererDescriptor)) {
+		rendererDescriptor.window = m_Window;
+		m_Renderer = registerSystem<kyra::Renderer>();
+		if (!m_Renderer->init(rendererDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise renderer");
 			return false;
 		}
 
 		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
-		renderPipelineDescriptor.commandBuffer = m_Renderer.acquireCommandBuffer();
+		renderPipelineDescriptor.commandBuffer = m_Renderer->acquireCommandBuffer();
 		kyra::RenderPipeline renderPipeline;
 		if (!renderPipeline.init(renderPipelineDescriptor)) {
 			return false;
 		}
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
-		renderPassPresentDescriptor.swapchain = m_Renderer.acquireSwapchain();
+		renderPassPresentDescriptor.swapchain = m_Renderer->acquireSwapchain();
 		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
 			return false;
 		}
-		m_Renderer.setRenderPipeline(renderPipeline);
+		m_Renderer->setRenderPipeline(renderPipeline);
 
 
 		return true;
@@ -77,11 +80,11 @@ public:
 	}
 
 	virtual void onUpdate() final {
-		if (!m_Window.isOpen()) {
+		if (!m_Window->isOpen()) {
 			quit();
 		}
-		m_Window.processEvents();
-		m_Renderer.update();
+		update();
+		Sleep(1);
 	}
 
 	virtual void onExit() final {
