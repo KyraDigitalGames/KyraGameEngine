@@ -4,22 +4,26 @@
 #include "RenderPass.hpp"
 #include "Swapchain.hpp"
 #include "RenderPassProcessor.hpp"
+#include <KyraGameEngine/Log/Logger.hpp>
 
 namespace kyra {
 
-	struct RenderPassPresentDescriptor {
-		Swapchain* swapchain = nullptr;
-		std::shared_ptr<RenderPassProcessor> processor = nullptr;
-	};
 
 	class RenderPassPresent : public RenderPass {
 
 		Swapchain* m_Swapchain = nullptr;
-		std::shared_ptr<RenderPassProcessor> m_Processor = nullptr;
+		std::vector<std::shared_ptr<RenderPassProcessor>> m_Processors;
 
 	public:
+		RenderPassPresent() {
+			KYRA_LOG_INFO("Creating RenderPassPresent");
+		}
 
-		bool init(const RenderPassPresentDescriptor& descriptor);
+		~RenderPassPresent() override {
+			KYRA_LOG_INFO("Destroying RenderPassPresent");
+		}
+
+		bool init(const RenderPassDescriptor& descriptor);
 
 		void beginDraw(CommandBuffer* commandBuffer);
 

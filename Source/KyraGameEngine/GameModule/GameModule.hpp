@@ -33,20 +33,20 @@ namespace kyra {
 
 	};
 
-	template<class BaseClass>
+	template<class BaseType>
 	class Registry {
 
-		std::map<std::string, std::unique_ptr<FactoryInterface<BaseClass>>> m_Factories;
+		std::map<std::string, std::unique_ptr<FactoryInterface<BaseType>>> m_Factories;
 
 
 	public:
 
 		template<class ImplementationType>
 		void registerFactory(const std::string& name) {
-			m_Factories[name] = std::make_unique<Factory<BaseClass, ImplementationType>>();
+			m_Factories[name] = std::make_unique<Factory<BaseType, ImplementationType>>();
 		}
 
-		std::shared_ptr<BaseClass> create(const std::string& name) {
+		std::shared_ptr<BaseType> create(const std::string& name) {
 			auto it = m_Factories.find(name);
 			if (it == m_Factories.end()) {
 				return nullptr;

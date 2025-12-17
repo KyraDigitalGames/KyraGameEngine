@@ -16,6 +16,8 @@ class KyraPlayer : public kyra::Application {
 
 	kyra::GameModule m_Module;
 
+	std::shared_ptr<kyra::RenderPass> m_RenderPass;
+
 public:
 	~KyraPlayer() {
 
@@ -56,7 +58,7 @@ public:
 			return false;
 		}
 
-		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
+		/*kyra::RenderPipelineDescriptor renderPipelineDescriptor;
 		renderPipelineDescriptor.commandBuffer = m_Renderer->acquireCommandBuffer();
 		kyra::RenderPipeline renderPipeline;
 		if (!renderPipeline.init(renderPipelineDescriptor)) {
@@ -65,10 +67,13 @@ public:
 
 		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
 		renderPassPresentDescriptor.swapchain = m_Renderer->acquireSwapchain();
-		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
+	
+		m_RenderPass = std::make_shared<kyra::RenderPassPresent>();
+		if (!m_RenderPass->toType<kyra::RenderPassPresent>()->init(renderPassPresentDescriptor)) {
 			return false;
 		}
-		m_Renderer->setRenderPipeline(renderPipeline);
+		renderPipeline.addRenderPass(std::move(m_RenderPass));
+		m_Renderer->setRenderPipeline(renderPipeline);*/
 
 
 		return true;

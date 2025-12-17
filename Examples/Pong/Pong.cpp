@@ -12,267 +12,21 @@
 #include <KyraGameEngine/Scripting/Actor.hpp>
 #include <KyraGameEngine/Core/AbstractSystem.hpp>
 #include <KyraGameEngine/Core/System.hpp>
-
-class Node;
-class Component {
-
-	Node* m_Node = nullptr;
-
-public:
-	virtual ~Component() = default;
-
-	void setParent(Node* node) {
-		m_Node = node;
-	}
-
-	Node* getNode() {
-		return m_Node;
-	}
-
-	const Node* getNode() const {
-		return m_Node;
-	}
-
-	virtual std::size_t getHash() const = 0;
-
-};
-
-
-class Node {
-
-	std::map<std::size_t, Component*> m_Components;
-
-	Node* m_Parent = nullptr;
-	std::vector<Node*> m_Children;
-
-public:
-
-	std::vector<Node*>& getChildren() {
-		return m_Children;
-	}
-
-	const std::vector<Node*>& getChildren() const {
-		return m_Children;
-	}
-
-	void addComponent(Component* component) {
-		auto id = component->getHash();
-		component->setParent(this);
-		m_Components.emplace(id, component);
-	}
-
-	template<class ComponentType>
-	bool hasComponent() const {
-		auto id = typeid(ComponentType).hash_code();
-		auto it = m_Components.find(id);
-		return it != m_Components.end();
-	}
-
-	template<class ComponentType>
-	ComponentType* getComponent() {
-		auto id = typeid(ComponentType).hash_code();
-		auto it = m_Components.find(id);
-		if(it != m_Components.end()) {
-			return static_cast<ComponentType*>(it->second);
-		}
-		return nullptr;
-	}
-
-	template<class ComponentType>
-	const ComponentType* getComponent() const {
-		auto id = typeid(ComponentType).hash_code();
-		auto it = m_Components.find(id);
-		if (it != m_Components.end()) {
-			return static_cast<ComponentType*>(it->second);
-		}
-		return nullptr;
-	}
-
-	void setParent(Node* node) {
-		m_Parent = node;
-	}
-
-	Node* getParent() noexcept {
-		return m_Parent;
-	}
-
-	const Node* getParent() const noexcept {
-		return m_Parent;
-	}
-
-};
-
-class TransformComponent : public Component {
-
-	kyra::Vector3<float> m_Position;
-	kyra::Vector3<float> m_Size;
-
-	mutable kyra::Matrix4 m_LocalTransform;
-	mutable bool m_IsLocalTransformDirty = true;
-
-	mutable kyra::Matrix4 m_WorldTransform;
-	mutable bool m_IsWorldTransformDirty = true;
-
-
-	public:
-
-	void markWorldDirty() {
-		m_IsWorldTransformDirty = true;
-		for (auto* c : getNode()->getChildren()) {
-			if (c->hasComponent<TransformComponent>()) {
-				c->getComponent<TransformComponent>()->markWorldDirty();
-			}
-		}
-	}
-
-	void setPosition(const kyra::Vector3<float>& position) {
-		m_Position = position;
-		m_IsLocalTransformDirty = true;
-	}
-
-	const kyra::Vector3<float>& getPosition() const {
-		return m_Position;
-	}
-
-	void setSize(const kyra::Vector3<float>& size) {
-		m_Size = size;
-		m_IsLocalTransformDirty = true;
-	}
-
-	const kyra::Vector3<float>& getSize() const {
-		return m_Size;
-	}
-
-	const kyra::Matrix4& getTransform() const {
-		if (m_IsLocalTransformDirty) {
-			m_LocalTransform = kyra::Matrix4()
-				.scale(m_Size)
-				.translate(m_Position);
-			m_IsLocalTransformDirty = false;
-			m_IsWorldTransformDirty = true;
-		}
-		if (m_IsWorldTransformDirty) {
-			const Node* parentNode = getNode()->getParent();
-			if (parentNode) {
-				if (parentNode->hasComponent<TransformComponent>()) {
-					const TransformComponent* parentTransform = parentNode->getComponent<TransformComponent>();
-					m_WorldTransform = parentTransform->getTransform() * m_LocalTransform;
-				}
-				else {
-					m_WorldTransform = m_LocalTransform;
-				}
-			}
-			else {
-				m_WorldTransform = m_LocalTransform;
-			}
-			m_IsWorldTransformDirty = false;
-		}
-		return m_WorldTransform;
-	}
-
-	virtual std::size_t getHash() const {
-		return typeid(TransformComponent).hash_code();
-	}
-
-};
-
-class ScriptComponentInterface : public Component {
-
-public:
-	virtual ~ScriptComponentInterface() = default;
-
-	virtual void update(float deltaTime) = 0;
-};
-
-class ScriptComponentFactoryInterface {
-
-public:
-	virtual ~ScriptComponentFactoryInterface() = default;
-
-	virtual std::unique_ptr<ScriptComponentInterface> create() = 0;
-
-};
-
-template<class ScriptComponentType>
-class ScriptComponentFactory : public ScriptComponentFactoryInterface {
-
-public:
-
-	std::unique_ptr<ScriptComponentInterface> create() final {
-		return std::make_unique<ScriptComponentType>();
-	}
-};
-
-class ScriptSystem : public kyra::System {
-
-	std::map<std::size_t, std::unique_ptr<ScriptComponentFactoryInterface>> m_Factories;
-	std::vector<std::unique_ptr<ScriptComponentInterface>> m_Components;
-
-public:
-
-	template<class ScriptComponentType>
-	void registerScriptComponentType() {
-		auto id = typeid(ScriptComponentType).hash_code();
-		m_Factories.emplace(id, std::make_unique<ScriptComponentFactory<ScriptComponentType>>());
-	}
-
-	template<class ScriptComponentType> 
-	ScriptComponentType* create() {
-		m_Components.emplace_back(m_Factories[typeid(ScriptComponentType).hash_code()]->create());
-		return static_cast<ScriptComponentType*>(m_Components.back().get());
-	}
-
-	void update(float deltaTime) {
-		for (auto& component : m_Components) {
-			component->update(deltaTime);
-		}
-	}
-
-};
-
-class ScriptComponent : public ScriptComponentInterface {
-
-public:
-
-};
-
-
-class Scene : public kyra::System {
-
-	std::map<std::string, std::unique_ptr<Node>> m_Nodes;
-	kyra::RenderPipeline m_RenderPipeline;
-
-public:
-
-	Node* createNode(const std::string& id) {
-		auto it = m_Nodes.emplace(id, std::make_unique<Node>());
-		return (it.second) ? it.first->second.get() : nullptr;
-	}
-
-	Node* getNode(const std::string& id) {
-		auto it = m_Nodes.find(id);
-		if (it == m_Nodes.end()) {
-			return nullptr;
-		}
-		return it->second.get();
-	}
-
-	void setRenderPipeline(kyra::RenderPipeline renderPipeline) {
-		m_RenderPipeline = renderPipeline;
-	}
-
-	void update(float deltaTime) {
-		m_RenderPipeline.renderFrame();
-	}
-
-};
-
-class SimpleMeshComponent : public Component {
+#include <KyraGameEngine/Scripting/ScriptComponentFactory.hpp>
+#include <KyraGameEngine/Scene/Node.hpp>
+#include <KyraGameEngine/Scene/TransformComponent.hpp>
+#include <KyraGameEngine/Scripting/ScriptSystem.hpp>
+#include <KyraGameEngine/Scripting/ScriptComponent.hpp>
+#include <KyraGameEngine/Scene/Scene.hpp>
+#include <KyraGameEngine/GameModule/GameModule.hpp>
+
+
+class SimpleMeshComponent : public kyra::Component {
 
 public:
 
 	const kyra::Matrix4& getTransform() const {
-		return getNode()->getComponent<TransformComponent>()->getTransform();
+		return getNode()->getComponent<kyra::TransformComponent>()->getTransform();
 	}
 
 	virtual std::size_t getHash() const {
@@ -380,12 +134,12 @@ public:
 
 class TransformSystem : public kyra::System {
 
-	std::vector<std::unique_ptr<TransformComponent>> m_Components;
+	std::vector<std::unique_ptr<kyra::TransformComponent>> m_Components;
 
 public:
 
-	TransformComponent* create() {
-		m_Components.emplace_back(std::make_unique<TransformComponent>());
+	kyra::TransformComponent* create() {
+		m_Components.emplace_back(std::make_unique<kyra::TransformComponent>());
 		return m_Components.back().get();
 	}
 
@@ -395,37 +149,87 @@ public:
 
 };
 
-class PhysicsComponent : public Component {
+class PhysicsComponent : public kyra::Component {
 	
+	kyra::Vector3<float> m_Velocity;
+
 	public:
 	
+	void addForce(const kyra::Vector3<float>& vec) {
+		m_Velocity = vec;
+	}
+
+	const kyra::Vector3<float>& getVelocity() const {
+		return m_Velocity;
+	}
+
 	virtual std::size_t getHash() const {
 		return typeid(PhysicsComponent).hash_code();
 	}
+
+	kyra::Signal<PhysicsComponent*> onCollision;
 
 };
 
 class PhysicsSystem : public kyra::System {
 
-	public:
-	void update(float deltaTime) final {
+	std::vector<std::unique_ptr<PhysicsComponent>> m_Components;
 
+
+
+	bool checkAABBOverlap(const kyra::Vector3<float>& posA, const kyra::Vector3<float>& sizeA,
+		const kyra::Vector3<float>& posB, const kyra::Vector3<float>& sizeB) {
+		return (posA.getX() < posB.getX() + sizeB.getX() &&
+			posA.getX() + sizeA.getX() > posB.getX() &&
+			posA.getY() < posB.getY() + sizeB.getY() &&
+			posA.getY() + sizeA.getY() > posB.getY());
+	}
+
+
+public:
+	void update(float deltaTime) final {
+		for (auto& component : m_Components) {
+			kyra::TransformComponent* transform = component->getNode()->getComponent<kyra::TransformComponent>();
+			kyra::Vector3<float> position = transform->getPosition();
+			auto velocity = component->getVelocity();
+			position += kyra::Vector3<float>(velocity.getX() * deltaTime, velocity.getY() * deltaTime, 0);
+			transform->setPosition(position);
+			transform->markWorldDirty();
+		}
+		for (auto& component : m_Components) {
+			kyra::TransformComponent* transformA = component->getNode()->getComponent<kyra::TransformComponent>();
+			kyra::Vector3<float> positionA = transformA->getPosition();
+			kyra::Vector3<float> sizeA = transformA->getSize();
+			for (auto& otherComponent : m_Components) {
+				if (component.get() == otherComponent.get()) {
+					continue;
+				}
+				kyra::TransformComponent* transformB = otherComponent->getNode()->getComponent<kyra::TransformComponent>();
+				kyra::Vector3<float> positionB = transformB->getPosition();
+				kyra::Vector3<float> sizeB = transformB->getSize();
+				if (checkAABBOverlap(positionA, sizeA, positionB, sizeB)) {
+					component->onCollision.dispatch(component.get());
+				}
+			}
+		}
+	}
+
+	PhysicsComponent* create() {
+		m_Components.emplace_back(std::make_unique<PhysicsComponent>());
+		return m_Components.back().get();
 	}
 
 };
 
 
-
-
-
-class PlayerPadScriptComponent : public ScriptComponent {
+class PlayerPadScriptComponent : public kyra::ScriptComponent {
 
 public:
 
 	void update(float deltaTime) final {
-	Node* node = getNode();
-		if(node->hasComponent<TransformComponent>()) {
-			TransformComponent* transform = node->getComponent<TransformComponent>();
+	kyra::Node* node = getNode();
+		if(node->hasComponent<kyra::TransformComponent>()) {
+			kyra::TransformComponent* transform = node->getComponent<kyra::TransformComponent>();
 			kyra::Vector3<float> position = transform->getPosition();
 			if(kyra::Keyboard::isPressed(kyra::Key::Left)) {
 				position = kyra::Vector3<float>(position.getX() - (500*deltaTime), 0, 0);
@@ -444,7 +248,7 @@ public:
 
 };
 
-class AIPadScriptComponent : public ScriptComponent {
+class AIPadScriptComponent : public kyra::ScriptComponent {
 	
 	public:
 	
@@ -457,12 +261,30 @@ class AIPadScriptComponent : public ScriptComponent {
 
 };
 
-class BallScriptComponent : public ScriptComponent {
+class BallScriptComponent : public kyra::ScriptComponent {
+
+	bool m_Started = false;
+
+	bool onCollision(PhysicsComponent* component) {
+		kyra::Vector3<float> velocity = component->getVelocity();
+		velocity = kyra::Vector3<float>(velocity.getX(), -velocity.getY(), 0);
+		component->addForce(velocity);
+		return true;
+	}
 
 public:
 
 	void update(float deltaTime) final {
-	
+		kyra::Node* node = getNode();
+		
+		if (node->hasComponent<PhysicsComponent>()) {
+			PhysicsComponent* physicsComponent = node->getComponent<PhysicsComponent>();
+			if (!m_Started) {
+				physicsComponent->addForce({ 0.0f, -150.0f, 0.0f });
+				physicsComponent->onCollision.connect(this, std::bind(&BallScriptComponent::onCollision, this, std::placeholders::_1));
+				m_Started = true;
+			}
+		}
 	}
 
 	virtual std::size_t getHash() const {
@@ -471,19 +293,24 @@ public:
 
 };
 
-	
+
 class Pong : public kyra::Application {
 
-	kyra::Window* m_Window;
-	kyra::Renderer* m_Renderer;
-	kyra::InputManager* m_InputManager;
-	ScriptSystem* m_ScriptSystem;
+	kyra::Window* m_Window = nullptr;
+	kyra::Renderer* m_Renderer = nullptr;
+	kyra::InputManager* m_InputManager = nullptr;
+	kyra::ScriptSystem* m_ScriptSystem = nullptr;
 
-	Scene* m_Scene;
-	TransformSystem* m_TransformSystem;
-	SimpleMeshSystem* m_SimpleMeshSystem;
+	kyra::Scene* m_Scene = nullptr;
+	TransformSystem* m_TransformSystem = nullptr;
+	SimpleMeshSystem* m_SimpleMeshSystem = nullptr;
+	PhysicsSystem* m_PhysicsSystem = nullptr;
 
 	std::shared_ptr<SimpleRenderPassProcessor> m_SimpleRenderPassProcessor;
+	std::shared_ptr<kyra::RenderPass> m_RenderPassPresent;
+
+	kyra::Registry<kyra::RenderPass> m_RenderPassRegistry;
+	kyra::Registry<kyra::RenderPassProcessor> m_RenderPassProcessorRegistry;
 
 public:
 
@@ -520,69 +347,89 @@ public:
 			return true;
 		});
 
-		m_ScriptSystem = registerSystem<ScriptSystem>();
+		m_ScriptSystem = registerSystem<kyra::ScriptSystem>();
 		m_ScriptSystem->registerScriptComponentType<PlayerPadScriptComponent>();
 		m_ScriptSystem->registerScriptComponentType<AIPadScriptComponent>();
+		m_ScriptSystem->registerScriptComponentType<BallScriptComponent>();
 
 		m_TransformSystem = registerSystem<TransformSystem>();
 
-		m_Scene = registerSystem<Scene>();
+		m_Scene = registerSystem<kyra::Scene>();
 		
 		m_Renderer = registerSystem<kyra::Renderer>();
 		kyra::RendererDescriptor rendererDescriptor;
 		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
 		rendererDescriptor.window = m_Window;
 		if (!m_Renderer->init(rendererDescriptor)) {
-			KYRA_LOG_ERROR("Failed to initialise renderer");
+			KYRA_LOG_ERROR("Failed to initialize renderer");
 			return false;
 		}
 
+
+		m_RenderPassRegistry.registerFactory<kyra::RenderPassPresent>("RenderPassPresent");
+		m_RenderPassProcessorRegistry.registerFactory<SimpleRenderPassProcessor>("SimpleRenderPassProcessor");
+
+
+	
 		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
-		renderPipelineDescriptor.commandBuffer = m_Renderer->acquireCommandBuffer();
+
+		/*kyra::BinaryReader reader;
+		reader.open("PongRenderPipeline.bin");
+		renderPipelineDescriptor.read(reader);
+		reader.close();*/
+
+		constexpr const char* KYRA_RENDERPASS_PRESENT = "RenderPassPresent";
+
+		kyra::RenderPassEntry renderPassEntry;
+		renderPassEntry.name = KYRA_RENDERPASS_PRESENT;
+		renderPassEntry.processorName = "SimpleRenderPassProcessor";
+
+		renderPipelineDescriptor.renderPassRegistry = &m_RenderPassRegistry;
+		renderPipelineDescriptor.renderPassProcessorRegistry = &m_RenderPassProcessorRegistry;
+		renderPipelineDescriptor.systemManager = getSystemManager();
+		renderPipelineDescriptor.renderer = m_Renderer;
+		renderPipelineDescriptor.m_RenderPasses.emplace_back(renderPassEntry);
+
 		kyra::RenderPipeline renderPipeline;
 		if (!renderPipeline.init(renderPipelineDescriptor)) {
 			return false;
 		}
 
+		/*kyra::BinaryWriter writer;
+		writer.open("PongRenderPipeline.bin");
+		renderPipelineDescriptor.write(writer);
+		writer.close();*/
+
+
 		m_SimpleMeshSystem = registerSystem<SimpleMeshSystem>();
 
-		m_SimpleRenderPassProcessor = std::make_shared<SimpleRenderPassProcessor>();
-
-		kyra::RenderPassPresentDescriptor renderPassPresentDescriptor;
-		renderPassPresentDescriptor.swapchain = m_Renderer->acquireSwapchain();
-		renderPassPresentDescriptor.processor = m_SimpleRenderPassProcessor;
-		if (!renderPipeline.registerPass<kyra::RenderPassPresent>(renderPassPresentDescriptor)) {
-			return false;
-		}
-
-		SimpleRenderPassProcessor* processor = static_cast<SimpleRenderPassProcessor*>(renderPassPresentDescriptor.processor.get());
-		processor->setSystemManager(getSystemManager());
-		if(!processor->init(*m_Renderer)) {
-			return false;
-		};
-
+		m_PhysicsSystem = registerSystem<PhysicsSystem>();
 	
-		Node* ballNode = m_Scene->createNode("BallNode");
+		kyra::Node* ballNode = m_Scene->createNode("BallNode");
 		ballNode->addComponent(m_TransformSystem->create());
-		ballNode->getComponent<TransformComponent>()->setPosition({ 0,0,0 });
-		ballNode->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		ballNode->getComponent<kyra::TransformComponent>()->setPosition({ 0,500,0 });
+		ballNode->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
+		ballNode->addComponent(m_ScriptSystem->create<BallScriptComponent>());
 		ballNode->addComponent(m_SimpleMeshSystem->create());
+		ballNode->addComponent(m_PhysicsSystem->create());
 
-		Node* pad1Node = m_Scene->createNode("Pad1Node");
+		kyra::Node* pad1Node = m_Scene->createNode("Pad1Node");
 		pad1Node->addComponent(m_TransformSystem->create());
-		pad1Node->getComponent<TransformComponent>()->setPosition({ 150,150,0 });
-		pad1Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		pad1Node->getComponent<kyra::TransformComponent>()->setPosition({ 150,150,0 });
+		pad1Node->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
+		pad1Node->addComponent(m_PhysicsSystem->create());
 		pad1Node->addComponent(m_SimpleMeshSystem->create());
 		pad1Node->addComponent(m_ScriptSystem->create<PlayerPadScriptComponent>());
 
-		Node* pad2Node = m_Scene->createNode("Pad2Node");
+		kyra::Node* pad2Node = m_Scene->createNode("Pad2Node");
 		pad2Node->addComponent(m_TransformSystem->create());
-		pad2Node->getComponent<TransformComponent>()->setPosition({ 300,300,0 });
-		pad2Node->getComponent<TransformComponent>()->setSize({ 100,100,0 });
+		pad2Node->getComponent<kyra::TransformComponent>()->setPosition({ 300,300,0 });
+		pad2Node->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
 		pad2Node->addComponent(m_SimpleMeshSystem->create());
 		pad2Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
+		pad2Node->addComponent(m_PhysicsSystem->create());
 
-		m_Scene->setRenderPipeline(renderPipeline);
+		m_Scene->setRenderPipeline(std::move(renderPipeline));
 
 		return true;
 	}
