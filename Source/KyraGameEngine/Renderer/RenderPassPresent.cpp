@@ -1,8 +1,10 @@
 #include "RenderPassPresent.hpp"
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 namespace kyra {
 
 	bool RenderPassPresent::init(const RenderPassDescriptor& descriptor) {
+		KYRA_PROFILE_FUNCTION();
 		if (!descriptor.swapchain) {
 			return false;
 		}
@@ -21,6 +23,7 @@ namespace kyra {
 	}
 
 	void RenderPassPresent::beginDraw(CommandBuffer* commandBuffer) {
+		KYRA_PROFILE_FUNCTION();
 		commandBuffer->clear(0, 0, 0, 0);
 		for(auto& processor : m_Processors) {
 			processor->update(commandBuffer);
@@ -28,6 +31,7 @@ namespace kyra {
 	}
 
 	void RenderPassPresent::endDraw(CommandBuffer* commandBuffer) {
+		KYRA_PROFILE_FUNCTION();
 		if (m_Swapchain) {
 			m_Swapchain->swap();
 

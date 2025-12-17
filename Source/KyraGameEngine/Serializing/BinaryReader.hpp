@@ -27,19 +27,16 @@ namespace kyra {
 			m_Stream.read(reinterpret_cast<char*>(&value), sizeof(T));
 		}
 
-		template<>
-		void read(std::string& value) {
-			std::size_t length = 0;
-			read(length);
-			value.resize(length);
-			m_Stream.read(&value[0], length);
-		}
 
 		void close() {
 			m_Stream.close();
 		}
 
 	};
+
+		template<>
+		void BinaryReader::read(std::string& value);
+
 
 }
 

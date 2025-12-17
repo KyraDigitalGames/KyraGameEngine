@@ -3,9 +3,12 @@
 
 #include <assert.h>
 
+#include <KyraGameEngine/Debug/Profiling.hpp>
+
 namespace kyra {
 
 	bool Window::init(const WindowDescriptor& windowDescriptor) {
+		KYRA_PROFILE_FUNCTION();
 		KYRA_LOG_INFO("Initialise Window");
 		KYRA_LOG_INFO("Title: " << windowDescriptor.title);
 		KYRA_LOG_INFO("Width: " << windowDescriptor.width);
@@ -15,6 +18,7 @@ namespace kyra {
 	}
 
 	bool Window::isOpen() const {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (m_Implementation) {
 			return m_Implementation->isOpen();
@@ -23,6 +27,7 @@ namespace kyra {
 	}
 
 	void Window::update(float deltaTime) {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (m_Implementation) {
 			m_Implementation->processEvents();
@@ -30,11 +35,21 @@ namespace kyra {
 	}
 
 	std::size_t Window::getHandle() const {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (m_Implementation) {
 			return m_Implementation->getHandle();
 		}
 		return 0;
+	}
+
+	Vector2<int> Window::getSize() const {
+		KYRA_PROFILE_FUNCTION();
+		assert(m_Implementation);
+		if (m_Implementation) {
+			return m_Implementation->getSize();
+		}
+		return { -1,-1 };
 	}
 
 }

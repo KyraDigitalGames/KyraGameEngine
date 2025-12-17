@@ -1,6 +1,7 @@
 #include "Renderer.hpp"
 
 #include <KyraGameEngine/Log/Logger.hpp>
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 #include <assert.h>
 
@@ -23,6 +24,7 @@
 namespace kyra {
 
 	bool Renderer::init(const RendererDescriptor& descriptor) {
+		KYRA_PROFILE_FUNCTION();
 #ifdef KYRA_RENDERER_VULKAN
 		if (descriptor.type == RenderDeviceType::Vulkan) {
 			m_Implementation = std::make_unique<RenderDeviceImplementationVulkan>();
@@ -52,6 +54,7 @@ namespace kyra {
 	}
 
 	Swapchain* Renderer::acquireSwapchain() {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (!m_Implementation) {
 			return nullptr;
@@ -60,6 +63,7 @@ namespace kyra {
 	}
 
 	CommandBuffer* Renderer::acquireCommandBuffer() {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (!m_Implementation) {
 			return nullptr;
@@ -69,6 +73,7 @@ namespace kyra {
 
 
 	std::shared_ptr<VertexBuffer> Renderer::createVertexBuffer() {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (!m_Implementation) {
 			return nullptr;
@@ -78,6 +83,7 @@ namespace kyra {
 
 
 	std::shared_ptr<RenderPipelineState> Renderer::createRenderPipelineState() {
+		KYRA_PROFILE_FUNCTION();
 		assert(m_Implementation);
 		if (!m_Implementation) {
 			return nullptr;
@@ -87,10 +93,12 @@ namespace kyra {
 
 
 	void Renderer::setRenderPipeline(RenderPipeline renderPipeline) {
+		KYRA_PROFILE_FUNCTION();
 		m_RenderPipeline = renderPipeline;
 	}
 
 	void Renderer::update(float deltaTime) {
+		KYRA_PROFILE_FUNCTION();
 		m_RenderPipeline.renderFrame();
 	}
 

@@ -1,9 +1,11 @@
 #include "RenderPipelineStateOpenGL.hpp"
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 namespace kyra {
 
 
 	RenderPipelineStateOpenGL::~RenderPipelineStateOpenGL() {
+		KYRA_PROFILE_FUNCTION();
 		for (auto& cache : m_VAOCache) {
 			glDeleteVertexArrays(1, &cache.second);
 		}
@@ -13,6 +15,7 @@ namespace kyra {
 	}
 
 	bool RenderPipelineStateOpenGL::init(const RenderPipelineStateDescriptor& descriptor) {
+		KYRA_PROFILE_FUNCTION();
 		if (m_ShaderProgram) {
 			glDeleteProgram(m_ShaderProgram);
 		}
@@ -64,6 +67,7 @@ namespace kyra {
 	}
 	
 	void RenderPipelineStateOpenGL::bind() {
+		KYRA_PROFILE_FUNCTION();
 		glUseProgram(m_ShaderProgram);
 	}
 		

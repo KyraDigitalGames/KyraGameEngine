@@ -1,10 +1,12 @@
 #include "RenderPipeline.hpp"
 #include "Renderer.hpp"
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 
 namespace kyra {
 	
 	bool RenderPipeline::init(RenderPipelineDescriptor& descriptor) {
+		KYRA_PROFILE_FUNCTION();
 		m_SystemManager = descriptor.systemManager;
 		m_Renderer = descriptor.renderer;
 		m_CommandBuffer = descriptor.renderer->acquireCommandBuffer();
@@ -30,6 +32,7 @@ namespace kyra {
 	}
 
 	void RenderPipeline::renderFrame() {
+		KYRA_PROFILE_FUNCTION();
 		for (auto& renderPass : m_RenderPasses) {
 			renderPass->renderFrame(m_CommandBuffer);
 		}

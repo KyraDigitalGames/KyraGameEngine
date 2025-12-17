@@ -84,6 +84,12 @@ namespace kyra {
 		void processEvents() final;
 		std::size_t getHandle() const final;
 
+		virtual Vector2<int> getSize() const {
+			RECT rect;
+			GetWindowRect(m_Handle, &rect);
+			return { rect.right - rect.left, rect.bottom - rect.top };
+		}
+
 	};
 
 }

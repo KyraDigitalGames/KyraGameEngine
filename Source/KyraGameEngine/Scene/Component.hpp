@@ -1,17 +1,25 @@
 #ifndef KYRAGAMEENGINE_SCENE_COMPONENT_HPP
 #define KYRAGAMEENGINE_SCENE_COMPONENT_HPP
 
-#include <KyraGameEngine/Serializing/Serializable.hpp>
-
 namespace kyra {
  
   class Node;
-  class Component : public Serializable {
+  class Scene;
+  class Component {
 
     Node* m_Node = nullptr;
+    Scene* m_Scene = nullptr;
 
   public:
     virtual ~Component() = default;
+
+    void setScene(Scene* scene) {
+      m_Scene = scene;
+    }
+    
+    Scene* getScene() const {
+     return m_Scene; 
+    }
 
     void setParent(Node* node) {
       m_Node = node;
@@ -26,10 +34,6 @@ namespace kyra {
     }
 
     virtual std::size_t getHash() const = 0;
-
-    void write(BinaryWriter& writer) override {
-
-    }
 
   };
 }

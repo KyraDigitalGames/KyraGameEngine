@@ -68,7 +68,8 @@ public:
 
 	bool init(kyra::Renderer& renderer) final {
 	
-		m_Projection = kyra::Matrix4::ortho(0, 1280, 720, 0, -1, 1);
+		const auto windowSize = getSystem<kyra::Window>()->getSize();
+		m_Projection = kyra::Matrix4::ortho(0, windowSize.getX(), windowSize.getY(), 0, -1, 1);
 
 		float vertices[] = {
 			0,0,0,
@@ -167,14 +168,13 @@ class PhysicsComponent : public kyra::Component {
 		return typeid(PhysicsComponent).hash_code();
 	}
 
-	kyra::Signal<PhysicsComponent*> onCollision;
+	kyra::Signal<PhysicsComponent*, PhysicsComponent*> onCollision;
 
 };
 
 class PhysicsSystem : public kyra::System {
 
 	std::vector<std::unique_ptr<PhysicsComponent>> m_Components;
-
 
 
 	bool checkAABBOverlap(const kyra::Vector3<float>& posA, const kyra::Vector3<float>& sizeA,
@@ -208,7 +208,7 @@ public:
 				kyra::Vector3<float> positionB = transformB->getPosition();
 				kyra::Vector3<float> sizeB = transformB->getSize();
 				if (checkAABBOverlap(positionA, sizeA, positionB, sizeB)) {
-					component->onCollision.dispatch(component.get());
+					component->onCollision.dispatch(component.get(), otherComponent.get());
 				}
 			}
 		}
@@ -254,6 +254,21 @@ class AIPadScriptComponent : public kyra::ScriptComponent {
 	
 	void update(float deltaTime) final {
 		// AI logic here
+		auto* ball = getScene()->getNode("BallNode");
+		if (ball->hasComponent<kyra::TransformComponent>()) {
+			auto ballPosition = ball->getComponent<kyra::TransformComponent>()->getPosition();
+			auto padPosition = getNode()->getComponent<kyra::TransformComponent>()->getPosition();
+			if ( (ballPosition.getX()-5) > padPosition.getX()) {
+				padPosition = kyra::Vector3<float>(padPosition.getX() + (500 * deltaTime), 610, 0);
+				getNode()->getComponent<kyra::TransformComponent>()->setPosition(padPosition);
+				getNode()->getComponent<kyra::TransformComponent>()->markWorldDirty();
+			}
+			else if ( (ballPosition.getX()+5) < padPosition.getX()) {
+				padPosition = kyra::Vector3<float>(padPosition.getX() - (500 * deltaTime), 610, 0);
+				getNode()->getComponent<kyra::TransformComponent>()->setPosition(padPosition);
+				getNode()->getComponent<kyra::TransformComponent>()->markWorldDirty();
+			}
+		}
 	}
 	virtual std::size_t getHash() const {
 		return typeid(AIPadScriptComponent).hash_code();
@@ -264,11 +279,29 @@ class AIPadScriptComponent : public kyra::ScriptComponent {
 class BallScriptComponent : public kyra::ScriptComponent {
 
 	bool m_Started = false;
+	std::string m_LastCollision = "";
 
-	bool onCollision(PhysicsComponent* component) {
+	bool onCollision(PhysicsComponent* component, PhysicsComponent* target) {
+		if (m_LastCollision == target->getNode()->getName()) {
+			return true;
+		}
+		m_LastCollision = target->getNode()->getName();
 		kyra::Vector3<float> velocity = component->getVelocity();
-		velocity = kyra::Vector3<float>(velocity.getX(), -velocity.getY(), 0);
-		component->addForce(velocity);
+		if (target->getNode()->getName() == "Pad1Node" || target->getNode()->getName() == "Pad2Node") {
+			auto target_pos = target->getNode()->getComponent<kyra::TransformComponent>()->getPosition();
+			auto pos = component->getNode()->getComponent<kyra::TransformComponent>()->getPosition();
+			velocity = kyra::Vector3<float>(target_pos.getX() - pos.getX() + (float)(rand() % 200) - (float(rand() % 200)), -velocity.getY() , 0);
+			component->addForce(velocity);
+		}
+		else if (target->getNode()->getName() == "TopWall" || target->getNode()->getName() == "BottomWall") {
+			velocity = kyra::Vector3<float>(velocity.getX(), -velocity.getY(), 0);
+			component->addForce(velocity);
+		}
+		else if (target->getNode()->getName() == "LeftWall" || target->getNode()->getName() == "RightWall") {
+			velocity = kyra::Vector3<float>(-velocity.getX(), velocity.getY(), 0);
+			component->addForce(velocity);
+		}
+	
 		return true;
 	}
 
@@ -276,12 +309,11 @@ public:
 
 	void update(float deltaTime) final {
 		kyra::Node* node = getNode();
-		
 		if (node->hasComponent<PhysicsComponent>()) {
 			PhysicsComponent* physicsComponent = node->getComponent<PhysicsComponent>();
 			if (!m_Started) {
-				physicsComponent->addForce({ 0.0f, -150.0f, 0.0f });
-				physicsComponent->onCollision.connect(this, std::bind(&BallScriptComponent::onCollision, this, std::placeholders::_1));
+				physicsComponent->addForce({ 250.f - (float)((rand() % 500)), -350.0f, 0.0f});
+				physicsComponent->onCollision.connect(this, std::bind(&BallScriptComponent::onCollision, this, std::placeholders::_1, std::placeholders::_2));
 				m_Started = true;
 			}
 		}
@@ -322,6 +354,7 @@ public:
 		windowDescriptor.title = "Pong";
 		windowDescriptor.width = 1280;
 		windowDescriptor.height = 720;
+		windowDescriptor.fullscreen = false;
 		if (!m_Window->init(windowDescriptor)) {
 			KYRA_LOG_ERROR("Failed to initialise window");
 			return false;
@@ -408,14 +441,14 @@ public:
 		kyra::Node* ballNode = m_Scene->createNode("BallNode");
 		ballNode->addComponent(m_TransformSystem->create());
 		ballNode->getComponent<kyra::TransformComponent>()->setPosition({ 0,500,0 });
-		ballNode->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
+		ballNode->getComponent<kyra::TransformComponent>()->setSize({ 10,10,0 });
 		ballNode->addComponent(m_ScriptSystem->create<BallScriptComponent>());
 		ballNode->addComponent(m_SimpleMeshSystem->create());
 		ballNode->addComponent(m_PhysicsSystem->create());
 
 		kyra::Node* pad1Node = m_Scene->createNode("Pad1Node");
 		pad1Node->addComponent(m_TransformSystem->create());
-		pad1Node->getComponent<kyra::TransformComponent>()->setPosition({ 150,150,0 });
+		pad1Node->getComponent<kyra::TransformComponent>()->setPosition({ 150,0,0 });
 		pad1Node->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
 		pad1Node->addComponent(m_PhysicsSystem->create());
 		pad1Node->addComponent(m_SimpleMeshSystem->create());
@@ -423,12 +456,32 @@ public:
 
 		kyra::Node* pad2Node = m_Scene->createNode("Pad2Node");
 		pad2Node->addComponent(m_TransformSystem->create());
-		pad2Node->getComponent<kyra::TransformComponent>()->setPosition({ 300,300,0 });
+		pad2Node->getComponent<kyra::TransformComponent>()->setPosition({ 150,620,0 });
 		pad2Node->getComponent<kyra::TransformComponent>()->setSize({ 100,100,0 });
 		pad2Node->addComponent(m_SimpleMeshSystem->create());
 		pad2Node->addComponent(m_ScriptSystem->create<AIPadScriptComponent>());
 		pad2Node->addComponent(m_PhysicsSystem->create());
 
+		kyra::Node* leftWall = m_Scene->createNode("LeftWall");
+		leftWall->addComponent(m_TransformSystem->create());
+		leftWall->getComponent<kyra::TransformComponent>()->setPosition({ -10,0,0 });
+		leftWall->getComponent<kyra::TransformComponent>()->setSize({ 10,720,0 });
+		leftWall->addComponent(m_PhysicsSystem->create());
+		kyra::Node* rightWall = m_Scene->createNode("RightWall");
+		rightWall->addComponent(m_TransformSystem->create());
+		rightWall->getComponent<kyra::TransformComponent>()->setPosition({ 1280,0,0 });
+		rightWall->getComponent<kyra::TransformComponent>()->setSize({ 10,720,0 });
+		rightWall->addComponent(m_PhysicsSystem->create());
+		kyra::Node* toptWall = m_Scene->createNode("TopWall");
+		toptWall->addComponent(m_TransformSystem->create());
+		toptWall->getComponent<kyra::TransformComponent>()->setPosition({ 0,-10,0 });
+		toptWall->getComponent<kyra::TransformComponent>()->setSize({ 1280,10,0 });
+		toptWall->addComponent(m_PhysicsSystem->create());
+		kyra::Node* bottomWall = m_Scene->createNode("BottomWall");
+		bottomWall->addComponent(m_TransformSystem->create());
+		bottomWall->getComponent<kyra::TransformComponent>()->setPosition({ 0,720,0 });
+		bottomWall->getComponent<kyra::TransformComponent>()->setSize({ 1280,10,0 });
+		bottomWall->addComponent(m_PhysicsSystem->create());
 		m_Scene->setRenderPipeline(std::move(renderPipeline));
 
 		return true;

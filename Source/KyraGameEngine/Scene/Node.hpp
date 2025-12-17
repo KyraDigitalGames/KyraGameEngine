@@ -9,6 +9,7 @@
 
 namespace kyra {
  
+class Scene;
 class Node : public Serializable {
 
   std::string m_Name = "";
@@ -17,8 +18,18 @@ class Node : public Serializable {
 
 	Node* m_Parent = nullptr;
 	std::vector<Node*> m_Children;
+  
+  Scene* m_Scene = nullptr;
 
 public:
+
+  void setScene(Scene* scene) {
+    m_Scene = scene;
+  }
+  
+  Scene* getScene() const {
+    return m_Scene;
+  }
 
 	std::vector<Node*>& getChildren() {
 		return m_Children;
@@ -39,6 +50,7 @@ public:
 	void addComponent(Component* component) {
 		auto id = component->getHash();
 		component->setParent(this);
+    component->setScene(m_Scene);
 		m_Components.emplace(id, component);
 	}
 
@@ -85,7 +97,7 @@ public:
     writer.write(m_Name);
     writer.write(m_Components.size());
     for(auto& component : m_Components) {
-      component.second->write(writer);
+      //component.second->write(writer);
     }
   }
 

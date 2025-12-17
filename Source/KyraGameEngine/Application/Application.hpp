@@ -3,6 +3,7 @@
 
 #include <KyraGameEngine/Log/Logger.hpp>
 #include <KyraGameEngine/Core/SystemManager.hpp>
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 namespace kyra {
 
@@ -24,7 +25,6 @@ namespace kyra {
 			return &m_SystemManager;
 		}
 
-
 		virtual bool onSetup() = 0;
 		virtual void onStart() = 0;
 		virtual void onExit() = 0;
@@ -37,7 +37,9 @@ namespace kyra {
 }
 
 #define KYRA_DEFINE_APPLICATION(AppType) int main(int argc, char** argv) {\
-	return AppType().run(argc, argv);\
+	int result = AppType().run(argc, argv);\
+	KYRA_PROFILE_PRINT();\
+	return result;\
 }
 
 #endif

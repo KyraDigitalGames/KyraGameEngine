@@ -27,18 +27,16 @@ namespace kyra {
 			m_Stream.write(reinterpret_cast<const char*>(&value), sizeof(T));
 		}
 
-		template<>
-		void write(const std::string& value) {
-			std::size_t length = value.length();
-			write(length);
-			m_Stream.write(value.c_str(), length);
-		}
-
+	
 		void close() {
 			m_Stream.close();
 		}
 
 	};
+  
+  	template<>
+		void BinaryWriter::write(const std::string& value);
+
 
 }
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 
+#include "Node.hpp"
+
 namespace kyra {
 
 	class Scene : public kyra::System {
@@ -16,7 +18,12 @@ namespace kyra {
 		
 		kyra::Node* createNode(const std::string& id) {
 			auto it = m_Nodes.emplace(id, std::make_unique<kyra::Node>());
-			return (it.second) ? it.first->second.get() : nullptr;
+			if(!it.second) {
+				return nullptr;
+			}
+      it.first->second->setName(id);
+			it.first->second->setScene(this);
+     	return it.first->second.get();
 		}
 
 		kyra::Node* getNode(const std::string& id) {

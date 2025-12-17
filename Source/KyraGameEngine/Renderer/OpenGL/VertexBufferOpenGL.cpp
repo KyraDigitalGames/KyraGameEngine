@@ -1,8 +1,10 @@
 #include "VertexBufferOpenGL.hpp"
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 namespace kyra {
 
 	VertexBufferOpenGL::~VertexBufferOpenGL() {
+		KYRA_PROFILE_FUNCTION();
 		if (m_Id) {
 			glDeleteBuffers(1, &m_Id);
 		}
@@ -10,6 +12,7 @@ namespace kyra {
 
 
 	bool VertexBufferOpenGL::init(const VertexBufferDescriptor& descriptor)  {
+		KYRA_PROFILE_FUNCTION();
 		if (m_Id) {
 			glDeleteBuffers(1, &m_Id);
 		}
@@ -20,10 +23,12 @@ namespace kyra {
 	}
 
 	void VertexBufferOpenGL::update(std::size_t size, void* data) {
+		KYRA_PROFILE_FUNCTION();
 		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
 	}
 
 	void VertexBufferOpenGL::bind() {
+		KYRA_PROFILE_FUNCTION();
 		glBindBuffer(GL_ARRAY_BUFFER, m_Id);
 	}
 

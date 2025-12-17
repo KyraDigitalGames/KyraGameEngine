@@ -5,6 +5,7 @@
 #include <memory>
 #include <map>
 #include <functional>
+#include <KyraGameEngine/Math/Vector2.hpp>
 
 namespace kyra {
 
@@ -58,6 +59,7 @@ namespace kyra {
 		std::string title = "Kyra Game Engine";
 		int width = 800;
 		int height = 600;
+		bool fullscreen = false;
 	};
 
 	struct WindowEvents {
@@ -81,6 +83,7 @@ namespace kyra {
 		virtual bool isOpen() const = 0;
 		virtual void processEvents() = 0;
 		virtual std::size_t getHandle() const = 0;
+		virtual Vector2<int> getSize() const = 0;
 
 	};
 

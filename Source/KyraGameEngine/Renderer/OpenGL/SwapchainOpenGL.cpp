@@ -1,10 +1,12 @@
 #include "SwapchainOpenGL.hpp"
 
 #include <KyraGameEngine/Log/Logger.hpp>
+#include <KyraGameEngine/Debug/Profiling.hpp>
 
 namespace kyra {
 	
 	SwapchainOpenGL::~SwapchainOpenGL() {
+		KYRA_PROFILE_FUNCTION();
 		if (m_RenderContext) {
 			wglDeleteContext(m_RenderContext);
 		}
@@ -12,6 +14,7 @@ namespace kyra {
 	}
 
 	bool SwapchainOpenGL::init(SwapchainDescriptor& descriptor) {
+		KYRA_PROFILE_FUNCTION();
 		if (descriptor.window == nullptr) {
 			return false;
 		}
@@ -59,20 +62,21 @@ namespace kyra {
 		wglMakeCurrent(m_DeviceContext, m_RenderContext);
 		wglDeleteContext(temporaryContext);
 
+
 		if (!gladLoadGL()) {
 			return false;
-		}
-			
-
+		}			
 		return true;
 	}
 
 	void SwapchainOpenGL::setVSync(bool enabled) {
+		KYRA_PROFILE_FUNCTION();
 		wglSwapIntervalEXT((enabled) ? 1 : 0);
 	}
 
 
 	void SwapchainOpenGL::swap() {
+		KYRA_PROFILE_FUNCTION();
 		SwapBuffers(m_DeviceContext);
 	}
 
