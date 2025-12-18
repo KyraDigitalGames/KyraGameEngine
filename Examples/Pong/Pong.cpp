@@ -20,7 +20,7 @@
 #include <KyraGameEngine/Image/ImageManager.hpp>
 #include <KyraGameEngine/Scene/2D/SceneSystem2D.hpp>
 #include <KyraGameEngine/Scene/2D/SceneRenderProcessor2D.hpp>
-
+#include <KyraGameEngine/Audio/AudioController.hpp>
 
 
 
@@ -111,8 +111,14 @@ public:
 			if(kyra::Keyboard::isPressed(kyra::Key::Right)) {
 				position = kyra::Vector2<float>(position.getX() + (500*deltaTime), 0);
 			}
+			
 			transform->setPosition(position);
 			transform->markWorldDirty();
+		}
+		if (node->hasComponent<kyra::AudioComponent>()) {
+			if (kyra::Keyboard::isPressed(kyra::Key::Up)) {
+				node->getComponent<kyra::AudioComponent>()->play();
+			}
 		}
 	}
 
@@ -309,7 +315,14 @@ public:
 		// Initialise Image Manager
 		
 		auto imageSystem = registerSystem<kyra::ImageManager>();
-		
+
+		// Initialise Audio Manager
+
+		auto audioController = registerSystem<kyra::AudioController>();
+		if (!audioController->init()) {
+			return false;
+		}
+
 		// Initialise Assets
 
 		kyra::Image* ball = imageSystem->load("./Assets/Textures/Ball.bmp");
@@ -327,8 +340,9 @@ public:
 
 		kyra::Node* backgroundNode = scene->createNode("Background");
 		backgroundNode->addComponent(sceneSystem->createTransformComponent());
-		backgroundNode->getComponent<kyra::TransformComponent2D>()->setPosition({ 0,0 });
-		backgroundNode->getComponent<kyra::TransformComponent2D>()->setSize({ 1280,720 });
+		auto* transformComponent = backgroundNode->getComponent<kyra::TransformComponent2D>();
+		transformComponent->setPosition({ 0,0 });
+		transformComponent->setSize({ 1280,720 });
 		backgroundNode->addComponent(sceneSystem->createSpriteComponent());
 		backgroundNode->getComponent<kyra::SpriteComponent>()->setTexture(backgroundTexture);
 
@@ -348,6 +362,8 @@ public:
 		pad1Node->addComponent(physicsSystem->create());
 		pad1Node->addComponent(sceneSystem->createSpriteComponent());
 		pad1Node->getComponent<kyra::SpriteComponent>()->setTexture(padTexture);
+		pad1Node->addComponent(audioController->createAudioComponent());
+		pad1Node->getComponent<kyra::AudioComponent>()->setBuffer(audioController->getAudioBuffer("./Assets/Audio/Example.wav"));
 		pad1Node->addComponent(scriptSystem->create<PlayerPadScriptComponent>());
 
 		kyra::Node* pad2Node = scene->createNode("Pad2Node");
