@@ -12,14 +12,13 @@ namespace kyra {
 		m_CommandBuffer = descriptor.renderer->acquireCommandBuffer();
 		RenderPassDescriptor renderPassDescriptor;
 		renderPassDescriptor.swapchain = descriptor.renderer->acquireSwapchain();
-		renderPassDescriptor.processorRegistry = descriptor.renderPassProcessorRegistry;
 		renderPassDescriptor.commandBuffer = m_CommandBuffer;
 		renderPassDescriptor.systemManager = descriptor.systemManager;
 		renderPassDescriptor.renderer = descriptor.renderer;
 		for(auto& renderPasses : descriptor.m_RenderPasses) {
 			renderPassDescriptor.processorNames.clear();
 			renderPassDescriptor.processorNames.emplace_back(renderPasses.processorName);
-			auto renderPass = descriptor.renderPassRegistry->create(renderPasses.name);
+			auto renderPass = descriptor.renderer->createRenderPass(renderPasses.name);
 			if (!renderPass) {
 				return false;
 			}

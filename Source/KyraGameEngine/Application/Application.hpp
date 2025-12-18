@@ -5,6 +5,7 @@
 #include <KyraGameEngine/Core/SystemManager.hpp>
 #include <KyraGameEngine/Debug/Profiling.hpp>
 
+
 namespace kyra {
 
 	class Application {

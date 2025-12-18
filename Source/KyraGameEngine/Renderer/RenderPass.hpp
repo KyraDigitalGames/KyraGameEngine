@@ -5,8 +5,8 @@
 #include <vector>
 #include <memory>
 
+#include <KyraGameEngine/Core/Registry.hpp>
 #include <KyraGameEngine/Core/SystemManager.hpp>
-#include <KyraGameEngine/GameModule/GameModule.hpp>
 #include "RenderPassProcessor.hpp"
 #include "Swapchain.hpp"
 #include "CommandBuffer.hpp"
@@ -18,7 +18,6 @@ namespace kyra {
 		CommandBuffer* commandBuffer = nullptr;
 		std::vector<std::string> processorNames;
 		SystemManager* systemManager = nullptr;
-		Registry<RenderPassProcessor>* processorRegistry = nullptr;
 		Renderer* renderer = nullptr;
 	};
 

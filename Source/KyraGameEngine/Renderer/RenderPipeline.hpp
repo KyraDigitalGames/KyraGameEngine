@@ -5,7 +5,6 @@
 #include "CommandBuffer.hpp"
 #include <vector>
 #include <memory>
-#include <KyraGameEngine/GameModule/GameModule.hpp>
 #include <KyraGameEngine/Serializing/Serializable.hpp>
 #include <string>
 
@@ -34,8 +33,6 @@ namespace kyra {
 	
 		Renderer* renderer = nullptr;
 		SystemManager* systemManager = nullptr;
-		Registry<RenderPass>* renderPassRegistry = nullptr;
-		Registry<RenderPassProcessor>* renderPassProcessorRegistry = nullptr;
 		std::vector<RenderPassEntry> m_RenderPasses;
 	
 		void write(BinaryWriter& writer) override {

@@ -17,6 +17,7 @@ namespace kyra {
 		void bindVertexBuffer(std::shared_ptr<VertexBuffer> vertexBuffer);
 		void updateBuffer(std::shared_ptr<VertexBuffer> vertexBuffer, const VertexBufferDescriptor& descriptor);
 		void bindRenderPipelineState(std::shared_ptr<RenderPipelineState> renderPipelineState);
+		void bindTexture(std::shared_ptr<Texture> texture);
 		void draw(std::size_t offset, std::size_t count) final;
 		void setUniformMat4(std::shared_ptr<RenderPipelineState> renderPipeline, const std::string& id, const Matrix4& matrix) final;
 

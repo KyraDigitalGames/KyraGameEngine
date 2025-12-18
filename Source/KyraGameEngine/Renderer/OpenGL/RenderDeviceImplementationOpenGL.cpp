@@ -2,6 +2,7 @@
 #include "VertexBufferOpenGL.hpp"
 #include "RenderPipelineStateOpenGL.hpp"
 #include <KyraGameEngine/Debug/Profiling.hpp>
+#include "TextureOpenGL.hpp"
 
 namespace kyra {
 
@@ -33,6 +34,11 @@ namespace kyra {
 	std::shared_ptr<RenderPipelineState> RenderDeviceImplementationOpenGL::createRenderPipelineState() {
 		KYRA_PROFILE_FUNCTION();
 		return std::make_shared<RenderPipelineStateOpenGL>();
+	}
+
+	std::shared_ptr<Texture> RenderDeviceImplementationOpenGL::createTexture() {
+		KYRA_PROFILE_FUNCTION();
+		return std::make_shared<TextureOpenGL>();
 	}
 
 

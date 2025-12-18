@@ -6,6 +6,7 @@
 #include "VertexBuffer.hpp"
 #include "RenderPipeline.hpp"
 #include "RenderPipelineState.hpp"
+#include "Texture.hpp"
 #include <memory>
 
 
@@ -24,6 +25,7 @@ namespace kyra {
 		
 		virtual std::shared_ptr<VertexBuffer> createVertexBuffer() = 0;
 		virtual std::shared_ptr<RenderPipelineState> createRenderPipelineState() = 0;
+		virtual std::shared_ptr<Texture> createTexture() = 0;
 
 		virtual Swapchain* acquireSwapchain() = 0;
 		virtual CommandBuffer* acquireCommandBuffer() = 0;

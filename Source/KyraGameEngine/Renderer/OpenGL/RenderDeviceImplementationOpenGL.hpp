@@ -19,6 +19,7 @@ namespace kyra {
 
 		std::shared_ptr<VertexBuffer> createVertexBuffer();
 		std::shared_ptr<RenderPipelineState> createRenderPipelineState();
+		std::shared_ptr<Texture> createTexture();
 
 		Swapchain* acquireSwapchain() final;
 		CommandBuffer* acquireCommandBuffer() final;

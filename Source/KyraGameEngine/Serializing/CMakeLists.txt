@@ -5,3 +5,4 @@ add_library(KyraSerialization STATIC BinaryReader.cpp
                                      Serializable.hpp
                                      )
 target_include_directories(KyraSerialization PRIVATE ${KYRA_SOURCE_DIRECTORY})
+install(TARGETS KyraSerialization ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/Lib)

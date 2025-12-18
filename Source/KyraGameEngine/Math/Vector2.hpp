@@ -24,6 +24,12 @@ namespace kyra {
 		constexpr T getY() const {
 			return m_Data[1];
 		}
+    
+    Vector2<T>& operator += (const Vector2<T>& vec) {
+      m_Data[0] += vec.m_Data[0];
+      m_Data[1] += vec.m_Data[1];
+      return *this;
+    }
 		
 	};
 	

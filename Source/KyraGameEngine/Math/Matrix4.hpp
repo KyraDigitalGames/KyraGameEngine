@@ -3,6 +3,7 @@
 #define KYRAGAMEENGINE_MATH_MATRIX4_HPP
 
 #include "Vector3.hpp"
+#include "Vector2.hpp"
 
 namespace kyra {
 
@@ -69,6 +70,14 @@ namespace kyra {
             translation.m_Data[14] = vec.getZ();
             return (*this) * translation;
         }
+        
+        Matrix4 translate(const Vector2<float>& vec) const {
+            Matrix4 translation;
+            translation.m_Data[12] = vec.getX();
+            translation.m_Data[13] = vec.getY();
+            translation.m_Data[14] = 0;
+            return (*this) * translation;
+        }
 
         Matrix4 scale(const Vector3<float>& vec) const {
             Matrix4 scaling;
@@ -76,7 +85,15 @@ namespace kyra {
             scaling.m_Data[5] = vec.getY();
             scaling.m_Data[10] = vec.getZ();
             return (*this) * scaling;
-		}
+        }
+        
+        Matrix4 scale(const Vector2<float>& vec) const {
+            Matrix4 scaling;
+            scaling.m_Data[0] = vec.getX();
+            scaling.m_Data[5] = vec.getY();
+            scaling.m_Data[10] = 1;
+            return (*this) * scaling;
+        }
 
         const float* getDataPtr() const {
             return m_Data;

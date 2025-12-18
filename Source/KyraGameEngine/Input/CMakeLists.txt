@@ -4,3 +4,4 @@ add_library(KyraInput STATIC InputManager.cpp
 						   Keyboard.cpp)
 target_compile_definitions(KyraInput PRIVATE ${KYRA_GLOBAL_COMPILE_DEFINITIONS})
 target_include_directories(KyraInput PRIVATE ${KYRA_SOURCE_DIRECTORY})
+install(TARGETS KyraInput ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/Lib)

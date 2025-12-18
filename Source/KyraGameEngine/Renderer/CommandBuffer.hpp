@@ -3,6 +3,7 @@
 
 #include "VertexBuffer.hpp"
 #include "RenderPipelineState.hpp"
+#include "Texture.hpp"
 #include <memory>
 #include <string>
 
@@ -18,6 +19,7 @@ namespace kyra {
 		virtual void bindVertexBuffer(std::shared_ptr<VertexBuffer> vertexBuffer) = 0;
 		virtual void updateBuffer(std::shared_ptr<VertexBuffer> vertexBuffer, const VertexBufferDescriptor& descriptor) = 0;
 		virtual void bindRenderPipelineState(std::shared_ptr<RenderPipelineState> renderPipelineState) = 0;
+		virtual void bindTexture(std::shared_ptr<Texture> texture) = 0;
 		virtual void setUniformMat4(std::shared_ptr<RenderPipelineState> renderPipeline, const std::string& id, const Matrix4& matrix) = 0;
 		virtual void draw(std::size_t offset, std::size_t count) = 0;
 	};

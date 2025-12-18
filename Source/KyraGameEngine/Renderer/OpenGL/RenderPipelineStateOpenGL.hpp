@@ -60,7 +60,9 @@ namespace kyra {
 				glGenVertexArrays(1, &vao);
 				glBindVertexArray(vao);
 				glEnableVertexAttribArray(0);
-				glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * sizeof(float), 0);
+				glVertexAttribPointer(0, 2, GL_FLOAT, false, 4 * sizeof(float), 0);
+				glEnableVertexAttribArray(1);
+				glVertexAttribPointer(1, 2, GL_FLOAT, false, 4 * sizeof(float), (void*)(2*sizeof(float)));
 				m_VAOCache[static_cast<VertexBufferOpenGL*>(vertexBuffer.get())->getId()] = vao;
 				return;
 			}

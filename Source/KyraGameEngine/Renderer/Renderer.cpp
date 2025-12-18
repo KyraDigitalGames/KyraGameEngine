@@ -91,6 +91,15 @@ namespace kyra {
 		return m_Implementation->createRenderPipelineState();
 	}
 
+	std::shared_ptr<Texture> Renderer::createTexture() {
+		KYRA_PROFILE_FUNCTION();
+		assert(m_Implementation);
+		if (!m_Implementation) {
+			return nullptr;
+		}
+		return m_Implementation->createTexture();
+	}
+
 
 	void Renderer::setRenderPipeline(RenderPipeline renderPipeline) {
 		KYRA_PROFILE_FUNCTION();

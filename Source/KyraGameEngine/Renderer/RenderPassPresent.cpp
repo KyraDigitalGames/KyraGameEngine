@@ -1,5 +1,6 @@
 #include "RenderPassPresent.hpp"
 #include <KyraGameEngine/Debug/Profiling.hpp>
+#include <KyraGameEngine/Renderer/Renderer.hpp>
 
 namespace kyra {
 
@@ -10,7 +11,7 @@ namespace kyra {
 		}
 		m_Swapchain = descriptor.swapchain;
 		for(auto& processorName : descriptor.processorNames) {
-			auto processor = descriptor.processorRegistry->create(processorName);
+			auto processor = descriptor.renderer->createRenderPassProcessor(processorName);
 			if (processor) {
 				processor->setSystemManager(descriptor.systemManager);
 				if (!processor->init( *descriptor.renderer)) {

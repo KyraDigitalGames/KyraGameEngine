@@ -14,7 +14,9 @@ list(APPEND KYRA_RENDERER_SOURCE_FILES ./OpenGL/RenderDeviceImplementationOpenGL
             ./OpenGL/RenderPipelineStateOpenGL.hpp
             ./OpenGL/RenderPipelineStateOpenGL.cpp
             ./OpenGL/VertexBufferOpenGL.cpp
-            ./OpenGL/VertexBufferOpenGL.hpp)
+            ./OpenGL/VertexBufferOpenGL.hpp
+            ./OpenGL/TextureOpenGL.hpp
+	    ./OpenGL/TextureOpenGL.cpp)
 MESSAGE(STATUS "OpenGL Render Device: Enabled")
 else()
 MESSAGE(STATUS "OpenGL Render Device: Disabled")
@@ -54,8 +56,10 @@ add_library(KyraRenderer STATIC RenderDeviceImplementation.hpp
                                 RenderPipelineState.cpp
                                 VertexBuffer.hpp
                                 VertexBuffer.cpp
+				Texture.hpp
 								${KYRA_RENDERER_SOURCE_FILES}
 								)
 target_include_directories(KyraRenderer PRIVATE ${KYRA_SOURCE_DIRECTORY})
 target_compile_definitions(KyraRenderer PRIVATE ${KYRA_RENDERER_COMPILE_DEFINITION} ${KYRA_GLOBAL_COMPILE_DEFINITIONS})
 target_link_libraries(KyraRenderer PUBLIC KyraLog ${KYRA_RENDERER_LINK_LIBRARIES})
+install(TARGETS KyraRenderer ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/Lib)

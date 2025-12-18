@@ -1,7 +1,6 @@
 #ifndef KYRAGAMEENGINE_SCENE_HPP
 #define KYRAGAMEENGINE_SCENE_HPP
 
-#include <KyraGameEngine/Core/SystemManager.hpp>
 #include <string>
 #include <memory>
 
@@ -9,10 +8,10 @@
 
 namespace kyra {
 
-	class Scene : public kyra::System {
+	class Scene  {
 
 		std::map<std::string, std::unique_ptr<kyra::Node>> m_Nodes;
-		kyra::RenderPipeline m_RenderPipeline;
+		kyra::RenderPipeline* m_RenderPipeline;
 
 	public:
 		
@@ -21,9 +20,9 @@ namespace kyra {
 			if(!it.second) {
 				return nullptr;
 			}
-      it.first->second->setName(id);
+		    it.first->second->setName(id);
 			it.first->second->setScene(this);
-     	return it.first->second.get();
+     		return it.first->second.get();
 		}
 
 		kyra::Node* getNode(const std::string& id) {
@@ -34,12 +33,14 @@ namespace kyra {
 			return it->second.get();
 		}
 
-		void setRenderPipeline(kyra::RenderPipeline renderPipeline) {
+		void setRenderPipeline(kyra::RenderPipeline* renderPipeline) {
 			m_RenderPipeline = renderPipeline;
 		}
 
-		void update(float deltaTime) {
-			m_RenderPipeline.renderFrame();
+		void renderFrame() {
+			if (m_RenderPipeline) {
+				m_RenderPipeline->renderFrame();
+			}
 		}
 
 		void write(BinaryWriter& binaryWriter) {
