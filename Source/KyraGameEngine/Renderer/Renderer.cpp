@@ -2,6 +2,7 @@
 
 #include <KyraGameEngine/Log/Logger.hpp>
 #include <KyraGameEngine/Debug/Profiling.hpp>
+#include "RenderPassPresent.hpp"
 
 #include <assert.h>
 
@@ -54,6 +55,8 @@ namespace kyra {
 			return false;
 		}
 		m_AssetManager = descriptor.assetManager;
+
+		registerRenderPassType<kyra::RenderPassPresent>("RenderPassPresent");
 
 		RenderDeviceDescriptor renderDeviceDescriptor;
 		renderDeviceDescriptor.window = descriptor.window;

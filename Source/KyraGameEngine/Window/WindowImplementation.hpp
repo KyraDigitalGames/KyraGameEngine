@@ -27,12 +27,13 @@ namespace kyra {
 			}
 		}
 
-		void dispatch(Args... args) {
+		bool dispatch(Args... args) {
 			for (auto& listener : m_Listeners) {
 				if (listener.second(args...)) {
-					return;
+					return true;
 				}
 			}
+			return false;
 		}
 
 	};
@@ -63,6 +64,7 @@ namespace kyra {
 	};
 
 	struct WindowEvents {
+		static Signal<> onCloseRequested;
 		static Signal<> onClose;
 		static Signal<Key> onKeyUp;
 		static Signal<Key> onKeyDown;

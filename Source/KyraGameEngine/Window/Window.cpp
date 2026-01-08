@@ -52,4 +52,10 @@ namespace kyra {
 		return { -1,-1 };
 	}
 
+	void Window::requestClose() {
+		if (!WindowEvents::onCloseRequested.dispatch()) {
+			WindowEvents::onClose.dispatch();
+		}
+	}
+
 }

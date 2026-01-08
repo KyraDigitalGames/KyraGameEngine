@@ -2,6 +2,7 @@
 #define KYRAGAMEENGINE_AUDIO_AUDIOBUFFER_HPP
 
 #include <string>
+#include <vector>
 
 namespace kyra {
 
@@ -10,7 +11,7 @@ namespace kyra {
 	public:
 		virtual ~AudioBuffer() = default;
 
-		virtual bool load(const std::string& file) = 0;
+		virtual bool load(const std::vector<unsigned char>& data) = 0;
 
 	};
 

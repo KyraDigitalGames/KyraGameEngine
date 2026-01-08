@@ -1,5 +1,6 @@
 
 #include "Application.hpp"
+#include <KyraGameEngine/Window/WindowImplementation.hpp>
 #include <chrono>
 
 namespace kyra {
@@ -27,12 +28,23 @@ namespace kyra {
 
 		KYRA_LOG_INFO("Starting Kyra Game Engine");
 		
+
 		if (!onSetup()) {
 			return -1;
 		}
 
-		m_IsRunning = true;
+		WindowEvents::onClose.connect(this, [&]() {
+			m_IsRunning = false;
+			return true;
+		});
+
+
 		onStart();
+		
+		if (m_SystemManager.getSystemCount() > 0) {
+			m_IsRunning = true;
+		}
+
 		while (m_IsRunning) {
 			update();
 		}

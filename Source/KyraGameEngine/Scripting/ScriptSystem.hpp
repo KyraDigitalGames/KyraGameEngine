@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 
+#include "ScriptComponentFactory.hpp"
+#include "ScriptComponentFactoryInterface.hpp"
 #include "ScriptComponentInterface.hpp"
 
 namespace kyra {

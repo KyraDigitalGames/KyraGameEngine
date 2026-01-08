@@ -1,6 +1,8 @@
 #ifndef KYRAGAMEENGINE_SCENE_2D_SCENERENDERPASSPROCESSOR2D_HPP
 #define KYRAGAMEENGINE_SCENE_2D_SCENERENDERPASSPROCESSOR2D_HPP
 
+#include "SceneSystem2D.hpp"
+
 #include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
 #include <KyraGameEngine/Renderer/Renderer.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
@@ -11,9 +13,16 @@ namespace kyra {
 
 	class SceneRenderPassProcessor2D : public kyra::RenderPassProcessor {
 
+		kyra::Matrix4 m_Projection;
+
+		// Sprite Rendering
 		std::shared_ptr<kyra::VertexBuffer> m_VertexBuffer;
 		std::shared_ptr<kyra::RenderPipelineState> m_RenderPipelineState;
-		kyra::Matrix4 m_Projection;
+
+		// Mesh Rendering
+		std::shared_ptr<kyra::VertexBuffer> m_MeshVertexBuffer;
+		std::shared_ptr<kyra::RenderPipelineState> m_MeshRenderPipelineState;
+
 
 	public:
 
@@ -73,6 +82,42 @@ namespace kyra {
 				return false;
 			}
 
+			kyra::VertexBufferDescriptor meshVertexBufferDescriptor;
+			meshVertexBufferDescriptor.size = 1024 * sizeof(float);
+			meshVertexBufferDescriptor.data = nullptr;
+			m_MeshVertexBuffer = renderer.createVertexBuffer();
+			if (!m_MeshVertexBuffer->init(meshVertexBufferDescriptor)) {
+				return false;
+			}
+
+			kyra::ShaderDescriptor meshVertexShader;
+			meshVertexShader.type = kyra::ShaderType::Vertex;
+			meshVertexShader.language = kyra::ShaderLanguage::GLSL;
+			meshVertexShader.data = "#version 330 core\n"
+				"layout (location = 0) in vec2 aPos;\n"
+				"layout (location = 1) in vec2 oUV;\n"
+				"uniform mat4 m_Projection;\n"
+				"uniform mat4 m_Model;\n"
+				"void main() {\n"
+				"gl_Position = m_Projection * m_Model * vec4(aPos.x, aPos.y, 0.0,  1.0);\n"
+				"}\0";
+			kyra::ShaderDescriptor meshFragmentShader;
+			meshFragmentShader.type = kyra::ShaderType::Fragment;
+			meshFragmentShader.language = kyra::ShaderLanguage::GLSL;
+			meshFragmentShader.data = "#version 330 core\n"
+				"out vec4 FragColor;\n"
+				"void main() {\n"
+				"FragColor = vec4(1.0, 1.0, 0.0, 1.0);\n"
+				"}\0";;
+
+			kyra::RenderPipelineStateDescriptor meshRenderPipelineStateDescriptor;
+			meshRenderPipelineStateDescriptor.shaders.emplace_back(meshVertexShader);
+			meshRenderPipelineStateDescriptor.shaders.emplace_back(meshFragmentShader);
+			m_MeshRenderPipelineState = renderer.createRenderPipelineState();
+			if (!m_MeshRenderPipelineState->init(meshRenderPipelineStateDescriptor)) {
+				return false;
+			}
+
 			return true;
 		}
 
@@ -85,6 +130,14 @@ namespace kyra {
 				commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Model", component->getTransform());
 				commandBuffer->bindTexture(renderer.getTexture(component->getTexture()));
 				commandBuffer->draw(0, 6);
+			}
+			commandBuffer->bindVertexBuffer(m_MeshVertexBuffer);
+			commandBuffer->bindRenderPipelineState(m_MeshRenderPipelineState);
+			for (auto& component : simpleMeshSystem->getMeshComponents()) {
+				m_MeshVertexBuffer->update(component->getDataSize(), component->getData());
+				commandBuffer->setUniformMat4(m_MeshRenderPipelineState, "m_Projection", m_Projection);
+				commandBuffer->setUniformMat4(m_MeshRenderPipelineState, "m_Model", component->getTransform());
+				commandBuffer->draw(component->getVertexOffset(), component->getVertexCount() );
 			}
 		}
 

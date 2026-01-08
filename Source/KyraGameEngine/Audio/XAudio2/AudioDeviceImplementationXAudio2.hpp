@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <iostream>
 
 namespace kyra {
 
@@ -20,9 +21,6 @@ namespace kyra {
 		IXAudio2* m_Handle;
 		IXAudio2MasteringVoice* m_MasterVoice;
 		IXAudio2SourceVoice* m_SourceVoice;
-
-		std::map<std::string, std::unique_ptr<AudioBuffer>> m_AudioBuffers;
-
 
 	public:
 		~AudioDeviceImplementationXAudio2() {
@@ -53,12 +51,12 @@ namespace kyra {
 
 			WAVEFORMATEX wfex = { 0 };
 			wfex.wFormatTag = WAVE_FORMAT_PCM;
-			wfex.nChannels = 1;
-			wfex.nSamplesPerSec = 11025L;
-			wfex.nAvgBytesPerSec = 11025L;
-			wfex.nBlockAlign = 1;
-			wfex.wBitsPerSample = 8;
-			wfex.cbSize = sizeof(wfex);
+			wfex.nChannels = 2;
+			wfex.nSamplesPerSec = 44100;
+			wfex.wBitsPerSample = 16;
+			wfex.nBlockAlign = (wfex.nChannels * wfex.wBitsPerSample) / 8;
+			wfex.nAvgBytesPerSec = wfex.nSamplesPerSec * wfex.nBlockAlign;
+			wfex.cbSize =0;
 
 			result = m_Handle->CreateSourceVoice(&m_SourceVoice, &wfex);
 			if (FAILED(result)) {
@@ -67,21 +65,17 @@ namespace kyra {
 			return true;
 		}
 
-		AudioBuffer* getAudioBuffer(const std::string& file) final {
-			auto it = m_AudioBuffers.find(file);
-			if (it == m_AudioBuffers.end()) {
-				m_AudioBuffers[file] = std::make_unique<AudioBufferXAudio2>();
-				if (!m_AudioBuffers[file]->load(file)) {
-					return nullptr;
-				}
-				return m_AudioBuffers[file].get();
+		std::shared_ptr<AudioBuffer> getAudioBuffer(const std::vector<unsigned char>& data) final {
+			std::shared_ptr<AudioBufferXAudio2> audioBuffer = std::make_shared<AudioBufferXAudio2>();
+			if(!audioBuffer->load(data)) {
+				return nullptr;
 			}
-			return it->second.get();
+			return std::move(audioBuffer);
 		}
 
 		
-		void play(AudioBuffer* audioBuffer) final {
-			m_SourceVoice->SubmitSourceBuffer(static_cast<AudioBufferXAudio2*>(audioBuffer)->getHandle());
+		void play(std::shared_ptr<AudioBuffer>& buffer) final {
+			m_SourceVoice->SubmitSourceBuffer(static_cast<AudioBufferXAudio2*>(buffer.get())->getHandle());
 			m_SourceVoice->Start(0, XAUDIO2_COMMIT_NOW);
 		}
 

@@ -17,8 +17,8 @@ namespace kyra {
 		static std::unique_ptr<AudioDeviceImplementation> create();
 
 		virtual bool init() = 0;
-		virtual AudioBuffer* getAudioBuffer(const std::string& file) = 0;
-		virtual void play(AudioBuffer* audioBuffer) = 0;
+		virtual std::shared_ptr<AudioBuffer> getAudioBuffer(const std::vector<unsigned char>& data) = 0;
+		virtual void play(std::shared_ptr<AudioBuffer>& buffer) = 0;
 
 	};
 

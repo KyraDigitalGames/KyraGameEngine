@@ -3,6 +3,7 @@
 
 #include "AudioBuffer.hpp"
 #include <KyraGameEngine/Scene/Component.hpp>
+#include <KyraGameEngine/Asset/Asset.hpp>
 #include <typeinfo>
 
 namespace kyra {
@@ -10,15 +11,20 @@ namespace kyra {
 	class AudioController;
 	class AudioComponent : public Component {
 
-		AudioBuffer* m_AudioBuffer = nullptr;
+		AudioAsset::Handle m_AudioHandle;
 		AudioController* m_AudioController = nullptr;
+	
 	public:
 
 		void setAudioController(AudioController* controller);
 
-		void setBuffer(AudioBuffer* buffer);
+		void setBuffer(AudioAsset::Handle& handle);
 
 		void play();
+
+		bool isPlaying() const {
+
+		}
 
 		std::size_t getHash() const final;
 

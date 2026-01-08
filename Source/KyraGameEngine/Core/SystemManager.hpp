@@ -31,6 +31,10 @@ namespace kyra {
       return nullptr;
     }
 
+    std::size_t getSystemCount() const {
+        return m_SystemMap.size();
+    }
+
     void update(float deltaTime) {
         for (auto& system : m_SystemMap) {
             system.second->update(deltaTime);

@@ -1,6 +1,7 @@
 #include "WindowImplementation.hpp"
 
 namespace kyra {
+	Signal<> WindowEvents::onCloseRequested;
 	Signal<> WindowEvents::onClose;
 	Signal<Key> WindowEvents::onKeyUp;
 	Signal<Key> WindowEvents::onKeyDown;

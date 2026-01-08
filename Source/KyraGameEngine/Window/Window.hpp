@@ -17,6 +17,7 @@ namespace kyra {
 		void update(float deltaTime);
 		std::size_t getHandle() const;
 		Vector2<int> getSize() const;
+		void requestClose();
 	};
 
 }

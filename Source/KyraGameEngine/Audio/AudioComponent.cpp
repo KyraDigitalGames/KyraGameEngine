@@ -7,8 +7,8 @@ namespace kyra {
 		m_AudioController = controller;
 	}
 
-	void AudioComponent::setBuffer(AudioBuffer* buffer) {
-		m_AudioBuffer = buffer;
+	void AudioComponent::setBuffer(AudioAsset::Handle& handle) {
+		m_AudioHandle = handle;
 	}
 
 	std::size_t AudioComponent::getHash() const {
@@ -16,8 +16,8 @@ namespace kyra {
 	}
 
 	void AudioComponent::play() {
-		if (m_AudioController && m_AudioBuffer) {
-			m_AudioController->play(m_AudioBuffer);
+		if (m_AudioController) {
+			m_AudioController->play(m_AudioHandle);
 		}
 	}
 

@@ -40,7 +40,9 @@ namespace kyra {
 		static LRESULT CALLBACK eventCallback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			switch (msg) {
 				case WM_CLOSE:
-					WindowEvents::onClose.dispatch();
+					if (!WindowEvents::onCloseRequested.dispatch()) {
+						WindowEvents::onClose.dispatch();
+					}
 					break;
 				case WM_KEYDOWN:
 					WindowEvents::onKeyDown.dispatch(convertKey(wparam));

@@ -72,7 +72,7 @@ namespace kyra {
 				KYRA_LOG_INFO("DISP_CHANGE_RESTART");
 				break;
 			}
-			m_Handle = CreateWindow("KYRA_WINDOW_CLASS", descriptor.title.c_str(), WS_POPUP | WS_VISIBLE,
+			m_Handle = CreateWindow("KYRA_WINDOW_CLASS", descriptor.title.c_str(), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 				CW_USEDEFAULT, CW_USEDEFAULT, width, height, nullptr,
 				nullptr, GetModuleHandle(nullptr), nullptr);
 			SetForegroundWindow(m_Handle);

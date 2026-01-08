@@ -4,14 +4,15 @@
 #include <KyraGameEngine/Math/Vector2.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
 #include <KyraGameEngine/Scene/Component.hpp>
+#include <KyraGameEngine/SCene/Node.hpp>
 
 
 namespace kyra {
 
 	class TransformComponent2D : public Component {
 
-		kyra::Vector2<float> m_Position;
-		kyra::Vector2<float> m_Size;
+		kyra::Vector2<float> m_Position = { 0,0 };
+		kyra::Vector2<float> m_Size = { 1,1 };
 
 		mutable kyra::Matrix4 m_LocalTransform;
 		mutable bool m_IsLocalTransformDirty = true;

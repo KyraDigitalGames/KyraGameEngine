@@ -2,22 +2,13 @@
 #include <KyraGameEngine/Application/Application.hpp>
 #include <KyraGameEngine/Renderer/Renderer.hpp>
 #include <KyraGameEngine/Window/Window.hpp>
-#include <KyraGameEngine/Renderer/RenderPipeline.hpp>
 #include <KyraGameEngine/Renderer/RenderPassPresent.hpp>
-#include <KyraGameEngine/Renderer/RenderPassProcessor.hpp>
 #include <KyraGameEngine/Math/Matrix4.hpp>
 #include <KyraGameEngine/Math/Vector2.hpp>
 #include <KyraGameEngine/Input/InputManager.hpp>
-#include <KyraGameEngine/Input/Keyboard.hpp>
-#include <KyraGameEngine/Scripting/Actor.hpp>
-#include <KyraGameEngine/Core/AbstractSystem.hpp>
-#include <KyraGameEngine/Core/System.hpp>
-#include <KyraGameEngine/Scripting/ScriptComponentFactory.hpp>
-#include <KyraGameEngine/Scene/Node.hpp>
 #include <KyraGameEngine/Scripting/ScriptSystem.hpp>
 #include <KyraGameEngine/Scripting/ScriptComponent.hpp>
 #include <KyraGameEngine/Scene/Scene.hpp>
-#include <KyraGameEngine/Image/ImageManager.hpp>
 #include <KyraGameEngine/Scene/2D/SceneSystem2D.hpp>
 #include <KyraGameEngine/Scene/2D/SceneRenderProcessor2D.hpp>
 #include <KyraGameEngine/Audio/AudioController.hpp>
@@ -265,16 +256,14 @@ public:
 			KYRA_LOG_ERROR("Failed to initialize renderer");
 			return false;
 		}
-		renderer->registerRenderPassType<kyra::RenderPassPresent>("RenderPassPresent");
 		renderer->registerRenderPassProcessorType<kyra::SceneRenderPassProcessor2D>("SceneRenderPassProcessor2D");
 
 	
+
 		// Initialise render pipeline
 
-		constexpr const char* KYRA_RENDERPASS_PRESENT = "RenderPassPresent";
-
 		kyra::RenderPassEntry renderPassEntry;
-		renderPassEntry.name = KYRA_RENDERPASS_PRESENT;
+		renderPassEntry.name = kyra::RenderPassPresent::Id;
 		renderPassEntry.processorName = "SceneRenderPassProcessor2D";
 
 		kyra::RenderPipelineDescriptor renderPipelineDescriptor;
@@ -287,19 +276,6 @@ public:
 			return false;
 		}
 
-		/*kyra::BinaryReader reader;
-		reader.open("PongRenderPipeline.bin");
-		renderPipelineDescriptor.read(reader);
-		reader.close();*/
-
-
-		/*kyra::BinaryWriter writer;
-		writer.open("PongRenderPipeline.bin");
-		renderPipelineDescriptor.write(writer);
-		writer.close();*/
-
-
-
 		// Initialise sript subsystem
 
 		kyra::ScriptSystem* scriptSystem = registerSystem<kyra::ScriptSystem>();
@@ -307,27 +283,25 @@ public:
 		scriptSystem->registerScriptComponentType<AIPadScriptComponent>();
 		scriptSystem->registerScriptComponentType<BallScriptComponent>();
 
-		// Initialise SceneSystem2D		
-		
+		// Initialise physics System
+
+		PhysicsSystem2D* physicsSystem = registerSystem<PhysicsSystem2D>();
+	
+		// Initialise Audio Manager
+
+		kyra::AudioControllerDescriptor audioControllerDescriptor;
+		audioControllerDescriptor.assetManager = assetManager;
+		auto audioController = registerSystem<kyra::AudioController>();
+		if (!audioController->init(audioControllerDescriptor)) {
+			return false;
+		}
+
+		// Initialise Scene
 		kyra::SceneSystem2D* sceneSystem = registerSystem<kyra::SceneSystem2D>();
 		kyra::Scene* scene = sceneSystem->createScene("DefaultScene");
 		scene->setRenderPipeline(renderPipeline);
 		sceneSystem->setActiveScene(scene);
 
-		// Initialise physics System
-
-		PhysicsSystem2D* physicsSystem = registerSystem<PhysicsSystem2D>();
-	
-		// Initialise Image Manager
-		
-		auto imageSystem = registerSystem<kyra::ImageManager>();
-
-		// Initialise Audio Manager
-
-		auto audioController = registerSystem<kyra::AudioController>();
-		if (!audioController->init()) {
-			return false;
-		}
 
 		// Initialise Assets
 
@@ -346,6 +320,12 @@ public:
 		kyra::TextureAsset::Handle backgroundTextureAsset = assetManager->loadTexture("./Assets/Textures/Background.bmp");
 		if(backgroundTextureAsset.isValid() == false) {
 			KYRA_LOG_ERROR("Failed to load texture Asset: ./Assets/Textures/Background.bmp");
+			return false;
+		}
+
+		kyra::AudioAsset::Handle audioAsset = assetManager->loadAudio("./Assets/Audio/Example.wav");
+		if (!audioAsset.isValid()) {
+			KYRA_LOG_ERROR("Failed to load audio Asset: ./Assets/Audio/Example.wav");
 			return false;
 		}
 
@@ -374,7 +354,7 @@ public:
 		pad1Node->addComponent(sceneSystem->createSpriteComponent());
 		pad1Node->getComponent<kyra::SpriteComponent>()->setTexture(padTextureAsset);
 		pad1Node->addComponent(audioController->createAudioComponent());
-		pad1Node->getComponent<kyra::AudioComponent>()->setBuffer(audioController->getAudioBuffer("./Assets/Audio/Example.wav"));
+		pad1Node->getComponent<kyra::AudioComponent>()->setBuffer(audioAsset);
 		pad1Node->addComponent(scriptSystem->create<PlayerPadScriptComponent>());
 
 		kyra::Node* pad2Node = scene->createNode("Pad2Node");

@@ -12,5 +12,15 @@ namespace kyra {
 		return m_TextureLoadingQueue;
 	}
 
+	template<>
+	bool AssetManager::isLoadingQueueEmpty<AudioAsset>() const {
+		return m_AudioLoadingQueue.empty();
+	}
+
+	template<>
+	std::vector<AssetId>& AssetManager::getLoadingQueue<AudioAsset>() {
+		return m_AudioLoadingQueue;
+	}
+
 
 }

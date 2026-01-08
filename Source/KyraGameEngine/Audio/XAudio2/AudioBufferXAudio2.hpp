@@ -11,82 +11,16 @@ namespace kyra {
 	class AudioBufferXAudio2 : public AudioBuffer {
 
 		XAUDIO2_BUFFER m_Buffer;
-		WAVEFORMATEXTENSIBLE m_Format;
-
 
 	public:
 
-		bool load(const std::string& file) {
-			HANDLE audioFile = CreateFileA(
-				file.c_str(),
-				GENERIC_READ,
-				FILE_SHARE_READ,
-				NULL,
-				OPEN_EXISTING,
-				FILE_ATTRIBUTE_NORMAL,
-				NULL
-			);
-
-			if (audioFile == INVALID_HANDLE_VALUE) {
-				return false;
-			}
-
-			if (SetFilePointer(audioFile, 0, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER) {
-				return false;
-			}
-
-			DWORD chunkType = 0;
-			DWORD chunkDataSize = 0;
-			DWORD fileFormat = 0;
-			DWORD bytesRead = 0;
-
-			ReadFile(audioFile, &chunkType, sizeof(DWORD), &bytesRead, NULL);
-
-			if (chunkType != 'FFIR') {
-				CloseHandle(audioFile);
-				return false;
-			}
-			ReadFile(audioFile, &chunkDataSize, sizeof(DWORD), &bytesRead, NULL); 
-			ReadFile(audioFile, &fileFormat, sizeof(DWORD), &bytesRead, NULL);    
-
-			if (fileFormat != 'EVAW') {
-				CloseHandle(audioFile);
-				return false;
-			}
-
-			ReadFile(audioFile, &chunkType, sizeof(DWORD), &bytesRead, NULL);
-
-			if (chunkType != ' tmf') {
-				CloseHandle(audioFile);
-				return false;
-			}
-
-			ReadFile(audioFile, &chunkDataSize, sizeof(DWORD), &bytesRead, NULL);
-			ReadFile(audioFile, &m_Format, chunkDataSize, &bytesRead, NULL); 
-
-			ReadFile(audioFile, &chunkType, sizeof(DWORD), &bytesRead, NULL);    
-
-			if (chunkType != 'atad') {
-				CloseHandle(audioFile);
-				return false;
-			}
-
-			ReadFile(audioFile, &chunkDataSize, sizeof(DWORD), &bytesRead, NULL);
-
-			BYTE* audioData = (BYTE*)malloc(chunkDataSize);
-
-			if (!audioData) {
-				CloseHandle(audioFile);
-				return false;
-			}
-
-			ReadFile(audioFile, audioData, chunkDataSize, &bytesRead, NULL);
-			
-			m_Buffer.pAudioData = audioData;
-			m_Buffer.AudioBytes = chunkDataSize;
-
-			CloseHandle(audioFile);
-
+		bool load(const std::vector<unsigned char>& data) {
+			m_Buffer.pAudioData = &data[0];
+			m_Buffer.AudioBytes = data.size();
+			m_Buffer.Flags = XAUDIO2_END_OF_STREAM;
+			m_Buffer.LoopCount = 0;
+			m_Buffer.LoopLength = 0;
+			m_Buffer.LoopBegin = 0;
 			return true;
 		}
 

@@ -1,6 +1,4 @@
-add_library(KyraImage STATIC ImageManager.cpp
-                             ImageManager.hpp
-                             Image.hpp
+add_library(KyraImage STATIC Image.hpp
                              Image.cpp
                              stb_image.h
                              stb_image_resize2.h

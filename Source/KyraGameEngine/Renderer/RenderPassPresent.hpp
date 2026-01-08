@@ -24,6 +24,8 @@ namespace kyra {
 			KYRA_LOG_INFO("Destroying RenderPassPresent");
 		}
 
+		static constexpr const char* Id = "RenderPassPresent";
+
 		bool init(const RenderPassDescriptor& descriptor);
 
 		void beginDraw(CommandBuffer* commandBuffer);

@@ -10,10 +10,49 @@
 
 namespace kyra {
 
+	class MeshComponent2D : public Component {
+
+		std::vector<float> m_Vertices;
+
+	public:
+
+		std::size_t getDataSize() const {
+			return m_Vertices.size() * sizeof(float);
+		}
+
+		void* getData() {
+			return reinterpret_cast<void*>(&m_Vertices[0]);
+		}
+
+		void setData(const std::vector<float>& vertices) {
+			m_Vertices = vertices;
+		}
+
+		const Matrix4& getTransform() const {
+			return getNode()->getComponent<kyra::TransformComponent2D>()->getTransform();
+		}
+
+		virtual std::size_t getHash() const {
+			return typeid(MeshComponent2D).hash_code();
+		}
+
+		std::size_t getVertexOffset() const {
+			return 0;
+		}
+
+		std::size_t getVertexCount() const {
+			return m_Vertices.size() / 4;
+		}
+
+
+	};
+
 	class SceneSystem2D : public System {
 
 		std::vector<std::unique_ptr<kyra::SpriteComponent>> m_SpriteComponents;
 		std::vector<std::unique_ptr<kyra::TransformComponent2D>> m_TransformComponents;
+		std::vector< std::unique_ptr<kyra::MeshComponent2D>> m_MeshComponents;
+
 		std::map<std::string, std::unique_ptr<Scene>> m_Scenes;
 		Scene* m_ActiveScene = nullptr;
 
@@ -53,9 +92,18 @@ namespace kyra {
 			return m_SpriteComponents.back().get();
 		}
 
+		MeshComponent2D* createMeshComponent() {
+			m_MeshComponents.emplace_back(std::make_unique<kyra::MeshComponent2D>());
+			return m_MeshComponents.back().get();
+		}
+
 		TransformComponent2D* createTransformComponent() {
 			m_TransformComponents.emplace_back(std::make_unique<kyra::TransformComponent2D>());
 			return m_TransformComponents.back().get();
+		}
+
+		std::vector<std::unique_ptr<MeshComponent2D>>& getMeshComponents() {
+			return m_MeshComponents;
 		}
 
 		std::vector<std::unique_ptr<SpriteComponent>>& getSpriteComponents() {
