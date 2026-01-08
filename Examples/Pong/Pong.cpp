@@ -21,7 +21,7 @@
 #include <KyraGameEngine/Scene/2D/SceneSystem2D.hpp>
 #include <KyraGameEngine/Scene/2D/SceneRenderProcessor2D.hpp>
 #include <KyraGameEngine/Audio/AudioController.hpp>
-
+#include <KyraGameEngine/Asset/AssetManager.hpp>
 
 
 class PhysicsComponent2D : public kyra::Component {
@@ -249,11 +249,16 @@ public:
 			return true;
 		});
 
+		// Initialise asset manager
+		kyra::AssetManager* assetManager = registerSystem<kyra::AssetManager>();
+
+
 		// Initialise render subsystem
 		
 		kyra::RendererDescriptor rendererDescriptor;
 		rendererDescriptor.type = kyra::RenderDeviceType::OpenGL;
 		rendererDescriptor.window = window;
+		rendererDescriptor.assetManager = assetManager;
 
 		kyra::Renderer* renderer = registerSystem<kyra::Renderer>();
 		if (!renderer->init(rendererDescriptor)) {
@@ -263,6 +268,7 @@ public:
 		renderer->registerRenderPassType<kyra::RenderPassPresent>("RenderPassPresent");
 		renderer->registerRenderPassProcessorType<kyra::SceneRenderPassProcessor2D>("SceneRenderPassProcessor2D");
 
+	
 		// Initialise render pipeline
 
 		constexpr const char* KYRA_RENDERPASS_PRESENT = "RenderPassPresent";
@@ -325,18 +331,23 @@ public:
 
 		// Initialise Assets
 
-		kyra::Image* ball = imageSystem->load("./Assets/Textures/Ball.bmp");
-		kyra::Image* pad = imageSystem->load("./Assets/Textures/Pad.bmp");
-		kyra::Image* background = imageSystem->load("./Assets/Textures/Background.bmp");
+		kyra::TextureAsset::Handle ballTextureAsset = assetManager->loadTexture("./Assets/Textures/Ball.bmp");
+		if(ballTextureAsset.isValid() == false) {
+			KYRA_LOG_ERROR("Failed to load texture Asset: ./Assets/Textures/Ball.bmp");
+			return false;
+		}
 
-		std::shared_ptr<kyra::Texture> ballTexture = renderer->createTexture();
-		ballTexture->upload(ball);
+		kyra::TextureAsset::Handle padTextureAsset = assetManager->loadTexture("./Assets/Textures/Pad.bmp");
+		if(padTextureAsset.isValid() == false) {
+			KYRA_LOG_ERROR("Failed to load texture Asset: ./Assets/Textures/Pad.bmp");
+			return false;
+		}
 
-		std::shared_ptr<kyra::Texture> padTexture = renderer->createTexture();
-		padTexture->upload(pad);
-
-		std::shared_ptr<kyra::Texture> backgroundTexture = renderer->createTexture();
-		backgroundTexture->upload(background);
+		kyra::TextureAsset::Handle backgroundTextureAsset = assetManager->loadTexture("./Assets/Textures/Background.bmp");
+		if(backgroundTextureAsset.isValid() == false) {
+			KYRA_LOG_ERROR("Failed to load texture Asset: ./Assets/Textures/Background.bmp");
+			return false;
+		}
 
 		kyra::Node* backgroundNode = scene->createNode("Background");
 		backgroundNode->addComponent(sceneSystem->createTransformComponent());
@@ -344,7 +355,7 @@ public:
 		transformComponent->setPosition({ 0,0 });
 		transformComponent->setSize({ 1280,720 });
 		backgroundNode->addComponent(sceneSystem->createSpriteComponent());
-		backgroundNode->getComponent<kyra::SpriteComponent>()->setTexture(backgroundTexture);
+		backgroundNode->getComponent<kyra::SpriteComponent>()->setTexture(backgroundTextureAsset);
 
 		kyra::Node* ballNode = scene->createNode("BallNode");
 		ballNode->addComponent(sceneSystem->createTransformComponent());
@@ -352,7 +363,7 @@ public:
 		ballNode->getComponent<kyra::TransformComponent2D>()->setSize({ 10,10 });
 		ballNode->addComponent(scriptSystem->create<BallScriptComponent>());
 		ballNode->addComponent(sceneSystem->createSpriteComponent());
-		ballNode->getComponent<kyra::SpriteComponent>()->setTexture(ballTexture);
+		ballNode->getComponent<kyra::SpriteComponent>()->setTexture(ballTextureAsset);
 		ballNode->addComponent(physicsSystem->create());
 
 		kyra::Node* pad1Node = scene->createNode("Pad1Node");
@@ -361,7 +372,7 @@ public:
 		pad1Node->getComponent<kyra::TransformComponent2D>()->setSize({ 100,20 });
 		pad1Node->addComponent(physicsSystem->create());
 		pad1Node->addComponent(sceneSystem->createSpriteComponent());
-		pad1Node->getComponent<kyra::SpriteComponent>()->setTexture(padTexture);
+		pad1Node->getComponent<kyra::SpriteComponent>()->setTexture(padTextureAsset);
 		pad1Node->addComponent(audioController->createAudioComponent());
 		pad1Node->getComponent<kyra::AudioComponent>()->setBuffer(audioController->getAudioBuffer("./Assets/Audio/Example.wav"));
 		pad1Node->addComponent(scriptSystem->create<PlayerPadScriptComponent>());
@@ -371,7 +382,7 @@ public:
 		pad2Node->getComponent<kyra::TransformComponent2D>()->setPosition({ 150,700 });
 		pad2Node->getComponent<kyra::TransformComponent2D>()->setSize({ 100,20 });
 		pad2Node->addComponent(sceneSystem->createSpriteComponent());
-		pad2Node->getComponent<kyra::SpriteComponent>()->setTexture(padTexture);
+		pad2Node->getComponent<kyra::SpriteComponent>()->setTexture(padTextureAsset);
 		pad2Node->addComponent(scriptSystem->create<AIPadScriptComponent>());
 		pad2Node->addComponent(physicsSystem->create());
 

@@ -9,6 +9,7 @@ namespace kyra {
 		if (!descriptor.swapchain) {
 			return false;
 		}
+		m_Renderer = descriptor.renderer;
 		m_Swapchain = descriptor.swapchain;
 		for(auto& processorName : descriptor.processorNames) {
 			auto processor = descriptor.renderer->createRenderPassProcessor(processorName);
@@ -27,7 +28,7 @@ namespace kyra {
 		KYRA_PROFILE_FUNCTION();
 		commandBuffer->clear(0, 0, 0, 0);
 		for(auto& processor : m_Processors) {
-			processor->update(commandBuffer);
+			processor->update(*m_Renderer, commandBuffer);
 		}
 	}
 

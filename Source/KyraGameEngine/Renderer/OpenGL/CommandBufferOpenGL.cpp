@@ -54,7 +54,7 @@ namespace kyra {
 		renderPipeline->uploadUniform(id.c_str(), matrix);
 	}
 
-	void CommandBufferOpenGL::bindTexture(std::shared_ptr<Texture> texture) {
+	void CommandBufferOpenGL::bindTexture(Texture* texture) {
 		if (!texture) {
 			return;
 		}

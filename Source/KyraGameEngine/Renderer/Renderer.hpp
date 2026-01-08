@@ -8,7 +8,9 @@
 #include <KyraGameEngine/Window/Window.hpp>
 #include <KyraGameEngine/Core/System.hpp>
 #include <KyraGameEngine/Core/Registry.hpp>
+#include <KyraGameEngine/Asset/AssetManager.hpp>
 #include <memory>
+#include <unordered_map>
 
 
 namespace kyra {
@@ -21,8 +23,10 @@ namespace kyra {
 		DirectX12
 	};
 
+	class AssetManager;
 	struct RendererDescriptor {
 		RenderDeviceType type = RenderDeviceType::OpenGL;
+		AssetManager* assetManager = nullptr;
 		Window* window = nullptr;
 	};
 
@@ -34,6 +38,10 @@ namespace kyra {
 		Registry<RenderPass> m_RenderPassRegistry;
 		Registry<RenderPassProcessor> m_RenderPassProcessorRegistry;
 		std::map<std::string, std::unique_ptr<RenderPipeline>> m_RenderPipelines;
+
+		AssetManager* m_AssetManager = nullptr;
+		std::unordered_map<uint32_t, std::shared_ptr<Texture>> m_Textures;
+		std::uint32_t m_NextTextureId = 1;
 
 	public:
 		
@@ -67,10 +75,12 @@ namespace kyra {
 		
 		Swapchain* acquireSwapchain();
 		CommandBuffer* acquireCommandBuffer();
-		
+	
+
 		std::shared_ptr<VertexBuffer> createVertexBuffer();
 		std::shared_ptr<RenderPipelineState> createRenderPipelineState();
-		std::shared_ptr<Texture> createTexture();
+		std::shared_ptr<Texture> Renderer::createTexture();
+		Texture* getTexture(const TextureAsset::Handle& handle);
 		
 		void setRenderPipeline(RenderPipeline renderPipeline);
 		void update(float deltaTime);

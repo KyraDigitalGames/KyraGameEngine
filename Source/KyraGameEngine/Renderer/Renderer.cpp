@@ -48,6 +48,13 @@ namespace kyra {
 			KYRA_LOG_ERROR("RendererDescriptor - Pointer to Window is nullptr");
 			return false;
 		}
+
+		if (descriptor.assetManager == nullptr) {
+			KYRA_LOG_ERROR("RendererDescriptor - Pointer to AssetManager is nullptr");
+			return false;
+		}
+		m_AssetManager = descriptor.assetManager;
+
 		RenderDeviceDescriptor renderDeviceDescriptor;
 		renderDeviceDescriptor.window = descriptor.window;
 		return m_Implementation->init(renderDeviceDescriptor);
@@ -106,8 +113,35 @@ namespace kyra {
 		m_RenderPipeline = renderPipeline;
 	}
 
+	Texture* Renderer::getTexture(const TextureAsset::Handle& handle) {
+		auto it = m_Textures.find(handle.asset->index);
+		if (it != m_Textures.end()) {
+			return it->second.get();
+		}
+		return nullptr;
+	}
+
 	void Renderer::update(float deltaTime) {
 		KYRA_PROFILE_FUNCTION();
+		if (!m_AssetManager->isLoadingQueueEmpty<TextureAsset>()) {
+			auto& loadingQueue = m_AssetManager->getLoadingQueue<TextureAsset>();
+			for(auto& textureAssetId : loadingQueue) {
+				TextureAsset* textureAsset = m_AssetManager->getTextureAsset(textureAssetId);
+				if(textureAsset == nullptr) {
+					continue;
+				}
+				if (textureAsset->isLoaded && textureAsset->index == 0) {
+					std::shared_ptr<Texture> texture = createTexture();
+					texture->upload(&textureAsset->image);
+					m_Textures[m_NextTextureId] = std::move(texture);
+					textureAsset->index = m_NextTextureId;
+					m_NextTextureId++;
+				}
+			}
+
+		}
+
+
 		m_RenderPipeline.renderFrame();
 	}
 

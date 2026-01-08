@@ -12,6 +12,7 @@ namespace kyra {
 	class RenderPassPresent : public RenderPass {
 
 		Swapchain* m_Swapchain = nullptr;
+		Renderer* m_Renderer = nullptr;
 		std::vector<std::shared_ptr<RenderPassProcessor>> m_Processors;
 
 	public:

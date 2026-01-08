@@ -76,14 +76,14 @@ namespace kyra {
 			return true;
 		}
 
-		void update(kyra::CommandBuffer* commandBuffer) final {
+		void update(kyra::Renderer& renderer, kyra::CommandBuffer* commandBuffer) final {
 			commandBuffer->bindVertexBuffer(m_VertexBuffer);
 			commandBuffer->bindRenderPipelineState(m_RenderPipelineState);
 			auto simpleMeshSystem = getSystem<kyra::SceneSystem2D>();
 			for (auto& component : simpleMeshSystem->getSpriteComponents()) {
 				commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Projection", m_Projection);
 				commandBuffer->setUniformMat4(m_RenderPipelineState, "m_Model", component->getTransform());
-				commandBuffer->bindTexture(component->getTexture());
+				commandBuffer->bindTexture(renderer.getTexture(component->getTexture()));
 				commandBuffer->draw(0, 6);
 			}
 		}

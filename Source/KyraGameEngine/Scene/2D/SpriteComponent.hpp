@@ -1,6 +1,7 @@
 #ifndef KYRAGAMEENGINE_SCENE_2D_SPRITECOMPONENT_HPP
 #define KYRAGAMEENGINE_SCENE_2D_SPRITECOMPONENT_HPP
 
+#include <KyraGameEngine/Asset/Asset.hpp>
 #include <KyraGameEngine/Scene/Component.hpp>
 #include <memory>
 
@@ -10,7 +11,7 @@ namespace kyra {
 	
 	class SpriteComponent : public kyra::Component {
 
-		std::shared_ptr<kyra::Texture> m_Texture;
+		TextureAsset::Handle m_Texture;
 
 	public:
 
@@ -22,11 +23,11 @@ namespace kyra {
 			return typeid(SpriteComponent).hash_code();
 		}
 
-		std::shared_ptr<kyra::Texture> getTexture() const {
+		const TextureAsset::Handle& getTexture() const {
 			return m_Texture;
 		}
 
-		void setTexture(std::shared_ptr<kyra::Texture> texture) {
+		void setTexture(TextureAsset::Handle& texture) {
 			m_Texture = texture;
 		}
 

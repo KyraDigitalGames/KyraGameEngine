@@ -25,7 +25,7 @@ namespace kyra {
 		}
 
 		virtual bool init(Renderer& renderer) = 0;
-		virtual void update(CommandBuffer* commandBuffer) = 0;
+		virtual void update(Renderer& renderer, CommandBuffer* commandBuffer) = 0;
 
 	};
 
