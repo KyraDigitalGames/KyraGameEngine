@@ -26,6 +26,16 @@ namespace kyra {
 
 	bool Renderer::init(const RendererDescriptor& descriptor) {
 		KYRA_PROFILE_FUNCTION();
+		if (descriptor.window == nullptr) {
+			KYRA_LOG_ERROR("RendererDescriptor - Pointer to Window is nullptr");
+			return false;
+		}
+
+		if (descriptor.assetManager == nullptr) {
+			KYRA_LOG_ERROR("RendererDescriptor - Pointer to AssetManager is nullptr");
+			return false;
+		}
+
 #ifdef KYRA_RENDERER_VULKAN
 		if (descriptor.type == RenderDeviceType::Vulkan) {
 			m_Implementation = std::make_unique<RenderDeviceImplementationVulkan>();
@@ -45,22 +55,24 @@ namespace kyra {
 #ifdef  KYRA_RENDERER_DIRECTX12
 
 #endif
-		if (descriptor.window == nullptr) {
-			KYRA_LOG_ERROR("RendererDescriptor - Pointer to Window is nullptr");
+		if (!m_Implementation) {
+			KYRA_LOG_ERROR("Renderer - Requesting render device failed");
 			return false;
 		}
 
-		if (descriptor.assetManager == nullptr) {
-			KYRA_LOG_ERROR("RendererDescriptor - Pointer to AssetManager is nullptr");
-			return false;
-		}
 		m_AssetManager = descriptor.assetManager;
 
 		registerRenderPassType<kyra::RenderPassPresent>("RenderPassPresent");
 
 		RenderDeviceDescriptor renderDeviceDescriptor;
 		renderDeviceDescriptor.window = descriptor.window;
-		return m_Implementation->init(renderDeviceDescriptor);
+
+		if (!m_Implementation->init(renderDeviceDescriptor)) {
+			KYRA_LOG_ERROR("Renderer - Render device initialisation failed");
+			return false;
+		}
+
+		return true;
 	}
 
 	Swapchain* Renderer::acquireSwapchain() {
@@ -130,21 +142,22 @@ namespace kyra {
 			auto& loadingQueue = m_AssetManager->getLoadingQueue<TextureAsset>();
 			for(auto& textureAssetId : loadingQueue) {
 				TextureAsset* textureAsset = m_AssetManager->getTextureAsset(textureAssetId);
-				if(textureAsset == nullptr) {
+				if(textureAsset == nullptr || !textureAsset->isLoaded) {
 					continue;
 				}
-				if (textureAsset->isLoaded && textureAsset->index == 0) {
-					std::shared_ptr<Texture> texture = createTexture();
-					texture->upload(&textureAsset->image);
-					m_Textures[m_NextTextureId] = std::move(texture);
-					textureAsset->index = m_NextTextureId;
-					m_NextTextureId++;
+				if(textureAsset->index > 0) {
+					continue;
 				}
+				std::shared_ptr<Texture> texture = createTexture();
+				if (!texture) {
+					KYRA_LOG_ERROR("Renderer - failed to create texture");
+				}
+				uint32_t id = m_NextTextureId.fetch_add(1, std::memory_order_relaxed);
+				m_Textures.emplace(id, std::move(texture));
+				textureAsset->index = id;
 			}
 
 		}
-
-
 		m_RenderPipeline.renderFrame();
 	}
 

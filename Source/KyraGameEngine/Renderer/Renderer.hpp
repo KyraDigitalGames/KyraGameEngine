@@ -11,6 +11,7 @@
 #include <KyraGameEngine/Asset/AssetManager.hpp>
 #include <memory>
 #include <unordered_map>
+#include <atomic>
 
 
 namespace kyra {
@@ -41,7 +42,7 @@ namespace kyra {
 
 		AssetManager* m_AssetManager = nullptr;
 		std::unordered_map<uint32_t, std::shared_ptr<Texture>> m_Textures;
-		std::uint32_t m_NextTextureId = 1;
+		std::atomic<std::uint32_t> m_NextTextureId = 0;
 
 	public:
 		
