@@ -1,0 +1,8 @@
+add_executable(TestWindow WindowTest.cpp)
+target_link_libraries(TestWindow PRIVATE KyraGameEngine)
+add_executable(TestRendererRHI RendererRHITest.cpp)
+target_link_libraries(TestRendererRHI PRIVATE KyraGameEngine)
+add_executable(TestRendererRPI RendererRPITest.cpp)
+target_link_libraries(TestRendererRPI PRIVATE KyraGameEngine)
+add_executable(TestECS ECSTest.cpp)
+target_link_libraries(TestECS PRIVATE KyraGameEngine)
