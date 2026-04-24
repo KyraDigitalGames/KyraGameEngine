@@ -18,6 +18,7 @@ namespace kyra {
 		virtual void begin() = 0;
 		virtual void beginRenderPass(RHIRenderPass::Ptr& renderPass, RHIFrameBuffer* framebuffer) = 0;
 		virtual void bindPipeline(RHIPipelineState::Ptr& pipeline) = 0;
+		virtual void bindPipeline(RHIPipelineState* pipeline) = 0;
 		virtual void bindVertexBuffer(int index, RHIBuffer::Ptr& buffer) = 0;
 		virtual void bindVertexBuffer(int index, RHIBuffer* buffer) = 0;
 		virtual void draw(int offset, int count) = 0;

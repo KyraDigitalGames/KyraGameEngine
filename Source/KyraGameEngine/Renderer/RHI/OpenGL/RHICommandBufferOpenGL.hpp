@@ -31,6 +31,12 @@ namespace kyra {
 			}
 		}
 
+		virtual void bindPipeline(RHIPipelineState* pipeline) {
+			if (m_PipelineState != pipeline) {
+				m_PipelineState = static_cast<RHIPipelineStateOpenGL*>(pipeline);
+			}
+		}
+
 		virtual void bindVertexBuffer(int index, RHIBuffer::Ptr& buffer) {
 			if (m_VertexBuffer != buffer.get()) {
 				m_VertexBuffer = static_cast<RHIBufferOpenGL*>(buffer.get());

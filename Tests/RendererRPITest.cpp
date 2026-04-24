@@ -10,19 +10,16 @@
 namespace kyra {
 
 	struct RPIResource {
-		std::string name;
-	};
-
-	struct RPIResourceUsage {
 
 		enum class Access {
 			Read,
 			Write
 		};
 
-		RPIResource* resource;
-		RPIResourceUsage::Access access;
+		static constexpr const char* WINDOW_SURFACE = "KYRA_WINDOW_SURFACE";
 
+		std::string name;
+		RPIResource::Access access;
 	};
 
 
@@ -61,17 +58,28 @@ namespace kyra {
 
 
 
+	class RPIRenderGraph;
 	class RPIRenderPass {
 
-		std::vector<RPIResourceUsage> m_Inputs;
-		std::vector<RPIResourceUsage> m_Outputs;
+		std::vector<RPIResource> m_Inputs;
+		std::vector<RPIResource> m_Outputs;
 
+	protected:
+
+		void registerInput(const RPIResource& resource) {
+			m_Inputs.push_back(resource);
+		}
+
+		void registerOutput(const RPIResource& resource) {
+			m_Outputs.push_back(resource);
+		}
+			 
 	public:
 		virtual ~RPIRenderPass() = default;
 
 		using Ptr = std::unique_ptr<RPIRenderPass>;
 
-		virtual bool init(kyra::RHIDevice::Ptr& device) = 0;
+		virtual bool init(kyra::RPIRenderGraph& graph, kyra::RHIDevice::Ptr& device) = 0;
 		virtual void execute(kyra::RHICommandBuffer::Ptr& commandBuffer, RPIRenderDataBuffer& buffer) = 0;
 
 	};
@@ -86,11 +94,14 @@ namespace kyra {
 		kyra::RHIPipelineState::Ptr m_PipelineState;
 		kyra::RHIRenderPass::Ptr m_RenderPass;
 		kyra::RHISwapChain::Ptr m_SwapChain;
+		kyra::RHIDevice::Ptr& m_RenderDevice;
 
 	public:
+		RPIRenderGraph(kyra::RHIDevice::Ptr& renderDevice) : m_RenderDevice(renderDevice) {
+
+		}
 
 		bool init(RHIDevice::Ptr& renderDevice) {
-
 			kyra::RHISwapChain::Descriptor swapChainDescriptor;
 			swapChainDescriptor.width = 1280;
 			swapChainDescriptor.height = 720;
@@ -98,70 +109,15 @@ namespace kyra {
 			if (!m_SwapChain) {
 				return false;
 			}
-
-			kyra::RHIShader::Descriptor vertexShaderDescriptor;
-			vertexShaderDescriptor.type = kyra::RHIShader::Type::Vertex;
-			vertexShaderDescriptor.data = "#version 330 core\n"
-				"layout (location = 0) in vec3 aPos;\n"
-				"layout (location = 1) in vec3 aColor;\n"
-				"out vec3 oColor;\n"
-				"void main() {\n"
-				"    gl_Position = vec4(aPos, 1.0);\n"
-				"    oColor = aColor;\n"
-				"}\0";
-			vertexShaderDescriptor.size = 0;
-			kyra::RHIShader::Ptr vertexShader = renderDevice->createShader(vertexShaderDescriptor);
-			if (!vertexShader) {
-				return false;
-			}
-
-			kyra::RHIShader::Descriptor fragmentShaderDescriptor;
-			fragmentShaderDescriptor.type = kyra::RHIShader::Type::Fragment;
-			fragmentShaderDescriptor.data = "#version 330 core\n"
-				"in vec3 oColor;\n"
-				"out vec4 vertexColor;\n"
-				"void main() {\n"
-				"vertexColor = vec4(oColor.r, oColor.g, oColor.b, 1.0);\n"
-				"}\0";
-			fragmentShaderDescriptor.size = 0;
-			kyra::RHIShader::Ptr fragmentShader = renderDevice->createShader(fragmentShaderDescriptor);
-			if (!fragmentShader) {
-				return false;
-			}
-
-			kyra::RHIPipelineLayout::Descriptor pipelineLayoutDescriptor;
-			kyra::RHIPipelineLayout::Ptr pipelineLayout = renderDevice->createPipelineLayout(pipelineLayoutDescriptor);
-			if (!pipelineLayout) {
-				return false;
-			}
-
-			kyra::RHIRenderPass::Descriptor renderPassDescriptor;
-			m_RenderPass = renderDevice->createRenderPass(renderPassDescriptor);
-			if (!m_RenderPass) {
-				return false;
-			}
-
-			struct Vertex {
-				float position[3];
-				float color[3];
-			};
-
-			kyra::RHIPipelineState::Descriptor pipelineStateDescriptor;
-			pipelineStateDescriptor.fragmentShader = &fragmentShader;
-			pipelineStateDescriptor.vertexShader = &vertexShader;
-			pipelineStateDescriptor.renderPass = &m_RenderPass;
-			pipelineStateDescriptor.pipelineLayout = &pipelineLayout;
-			pipelineStateDescriptor.bufferLayout.stride = sizeof(Vertex);
-			pipelineStateDescriptor.bufferLayout.attributes = {
-				{0, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 0},
-				{1, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 3 * sizeof(float)}
-			};
-
-			m_PipelineState = renderDevice->createPipelineState(pipelineStateDescriptor);
-			if (!m_PipelineState) {
-				return false;
-			}
 			return true;
+		}
+
+		RHIPipelineState* aquirePipelineState(RHIPipelineState::Descriptor& descriptor) {
+			m_PipelineState = m_RenderDevice->createPipelineState(descriptor);
+			if (!m_PipelineState) {
+				return nullptr;
+			}
+			return m_PipelineState.get();
 		}
 
 		void compile(std::vector<RPIRenderPass*>& renderPasses) {
@@ -178,8 +134,7 @@ namespace kyra {
 			kyra::RHIFrameBuffer* framebuffer = m_SwapChain->getFrameBuffer(imageIndex);
 			commandBuffer->begin();
 			for (auto& renderPass : m_RenderPassesPtr) {
-				commandBuffer->beginRenderPass(m_RenderPass, nullptr);
-				commandBuffer->bindPipeline(m_PipelineState);
+				commandBuffer->beginRenderPass(m_RenderPass, framebuffer);
 				renderPass->execute(commandBuffer, buffer);
 				commandBuffer->endRenderPass();
 			}
@@ -213,10 +168,9 @@ namespace kyra {
 	class RPIRenderPipeline {
 
 		RHIDevice::Ptr m_RenderDevice;
-		RPIRenderGraph renderGraph;
-		std::vector<RPIRenderPass*> m_RenderPasses;
+		std::unique_ptr<RPIRenderGraph> m_RenderGraph;
 		std::vector<RPIFeatureProcessor*> m_FeatureProcessors;
-		
+		std::vector<RPIRenderPass*> m_RenderPasses;
 	public:
 
 		bool init(Window::Ptr& window) {
@@ -226,12 +180,13 @@ namespace kyra {
 			if (!m_RenderDevice->init(descriptor)) {
 				return false;
 			}
-			return renderGraph.init(m_RenderDevice);
+			m_RenderGraph = std::make_unique<RPIRenderGraph>(m_RenderDevice);
+			return m_RenderGraph->init(m_RenderDevice);
 		}
 		
 		void registerRenderPass(RPIRenderPass* renderPass) {
 			m_RenderPasses.push_back(renderPass);
-			m_RenderPasses.back()->init(m_RenderDevice);
+			m_RenderPasses.back()->init(*(m_RenderGraph.get()), m_RenderDevice);
 		}
 
 		void registerFeatureProcessor(RPIFeatureProcessor* processor) {
@@ -240,12 +195,12 @@ namespace kyra {
 		}
 			
 		void renderFrame() {
-			renderGraph.compile(m_RenderPasses);
+			m_RenderGraph->compile(m_RenderPasses);
 			kyra::RPIRenderDataBuffer buffer;
 			for (auto& processor : m_FeatureProcessors) {
 				processor->gather(buffer);
 			}
-			renderGraph.execute(m_RenderDevice,buffer);
+			m_RenderGraph->execute(m_RenderDevice,buffer);
 		}
 
 	};
@@ -260,6 +215,12 @@ struct Vertex {
 
 struct TriangleRenderData {
 	int temporaryValue = 0;
+};
+
+class TriangleView : public kyra::RPISceneView {
+
+public:
+
 };
 
 class TriangleFeature : public kyra::RPIFeatureProcessor {
@@ -279,11 +240,73 @@ public:
 
 class TriangleRenderPass : public kyra::RPIRenderPass {
 
+	kyra::RHIPipelineState* m_PipelineState;
 	kyra::RHIBuffer::Ptr m_VertexBuffer;
 
 public:
 
-	bool init(kyra::RHIDevice::Ptr& device) {
+	bool init(kyra::RPIRenderGraph& graph, kyra::RHIDevice::Ptr& device) {
+		
+		registerInput({
+			"TEST_IMAGE",
+			kyra::RPIResource::Access::Read 
+		});
+
+		registerOutput({
+			kyra::RPIResource::WINDOW_SURFACE,
+			kyra::RPIResource::Access::Write }
+		);
+
+		kyra::RHIShader::Descriptor vertexShaderDescriptor;
+		vertexShaderDescriptor.type = kyra::RHIShader::Type::Vertex;
+		vertexShaderDescriptor.data = "#version 330 core\n"
+			"layout (location = 0) in vec3 aPos;\n"
+			"layout (location = 1) in vec3 aColor;\n"
+			"out vec3 oColor;\n"
+			"void main() {\n"
+			"    gl_Position = vec4(aPos, 1.0);\n"
+			"    oColor = aColor;\n"
+			"}\0";
+		vertexShaderDescriptor.size = 0;
+
+		kyra::RHIShader::Ptr vertexShader = device->createShader(vertexShaderDescriptor);
+		if (!vertexShader) {
+			return false;
+		}
+
+		kyra::RHIShader::Descriptor fragmentShaderDescriptor;
+		fragmentShaderDescriptor.type = kyra::RHIShader::Type::Fragment;
+		fragmentShaderDescriptor.data = "#version 330 core\n"
+			"in vec3 oColor;\n"
+			"out vec4 vertexColor;\n"
+			"void main() {\n"
+			"vertexColor = vec4(oColor.r, oColor.g, oColor.b, 1.0);\n"
+			"}\0";
+		fragmentShaderDescriptor.size = 0;
+
+		kyra::RHIShader::Ptr fragmentShader = device->createShader(fragmentShaderDescriptor);
+		if (!fragmentShader) {
+			return false;
+		}
+
+		kyra::RHIPipelineLayout::Descriptor pipelineLayoutDescriptor;
+		kyra::RHIPipelineLayout::Ptr pipelineLayout = device->createPipelineLayout(pipelineLayoutDescriptor);
+		if (!pipelineLayout) {
+			return false;
+		}
+
+		kyra::RHIPipelineState::Descriptor pipelineStateDescriptor;
+		pipelineStateDescriptor.fragmentShader = &fragmentShader;
+		pipelineStateDescriptor.vertexShader = &vertexShader;
+		pipelineStateDescriptor.pipelineLayout = &pipelineLayout;
+		pipelineStateDescriptor.bufferLayout.stride = sizeof(Vertex);
+		pipelineStateDescriptor.bufferLayout.attributes = {
+			{0, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 0},
+			{1, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 3 * sizeof(float)}
+		};
+
+		m_PipelineState = graph.aquirePipelineState(pipelineStateDescriptor);
+
 		Vertex vertices[] = {
 			{{0,0.5,0}, {1,0,0}},
 			{{-0.5,-0.5,0}, {0,1,0}},
@@ -304,6 +327,7 @@ public:
 	void execute(kyra::RHICommandBuffer::Ptr& commandBuffer, kyra::RPIRenderDataBuffer& buffer) {
 		std::vector<TriangleRenderData>& data = buffer.getBuffer<TriangleRenderData>();
 		for (auto& renderData : data) {
+			commandBuffer->bindPipeline(m_PipelineState);
 			commandBuffer->bindVertexBuffer(0, m_VertexBuffer);
 			commandBuffer->draw(0, 3);
 		}
@@ -345,7 +369,6 @@ public:
 		if (!window->init(windowDescriptor)) {
 			return -1;
 		}
-
 
 		kyra::RPIRenderPipeline renderPipeline;
 		if (!renderPipeline.init(window)) {
