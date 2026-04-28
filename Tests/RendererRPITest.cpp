@@ -79,68 +79,47 @@ namespace kyra {
 
 		using Ptr = std::unique_ptr<RPIRenderPass>;
 
-		virtual bool init(kyra::RPIRenderGraph& graph, kyra::RHIDevice::Ptr& device) = 0;
+		virtual bool init(kyra::RHIDevice::Ptr& device) = 0;
 		virtual void execute(kyra::RHICommandBuffer::Ptr& commandBuffer, RPIRenderDataBuffer& buffer) = 0;
 
 	};
 
-	//class RPITransientResourceAllocator {
-
-	//};
 
 	class RPIRenderGraph {
 
-		std::vector<RPIRenderPass*> m_RenderPassesPtr;
-		kyra::RHIPipelineState::Ptr m_PipelineState;
-		kyra::RHIRenderPass::Ptr m_RenderPass;
-		kyra::RHISwapChain::Ptr m_SwapChain;
-		kyra::RHIDevice::Ptr& m_RenderDevice;
+		std::vector<RPIRenderPass*> m_RenderPasses;
+
+		static void cullPasses(std::vector<RPIRenderPass::Ptr>& input, std::vector<RPIRenderPass*>& output) {
+			for (auto& renderPass : input) {
+				output.push_back(renderPass.get());
+			}
+		}
+
+		static void orderPasses(std::vector<RPIRenderPass::Ptr>& input, std::vector<RPIRenderPass*>& output) {
+
+		}
 
 	public:
-		RPIRenderGraph(kyra::RHIDevice::Ptr& renderDevice) : m_RenderDevice(renderDevice) {
 
-		}
-
-		bool init(RHIDevice::Ptr& renderDevice) {
-			kyra::RHISwapChain::Descriptor swapChainDescriptor;
-			swapChainDescriptor.width = 1280;
-			swapChainDescriptor.height = 720;
-			m_SwapChain = renderDevice->createSwapChain(swapChainDescriptor);
-			if (!m_SwapChain) {
-				return false;
+		void compile(std::vector<RPIRenderPass::Ptr>& renderPasses) {
+			if (renderPasses.empty()) {
+				return;
 			}
-			return true;
+			cullPasses(renderPasses, m_RenderPasses);
+			orderPasses(renderPasses, m_RenderPasses);
 		}
 
-		RHIPipelineState* aquirePipelineState(RHIPipelineState::Descriptor& descriptor) {
-			m_PipelineState = m_RenderDevice->createPipelineState(descriptor);
-			if (!m_PipelineState) {
-				return nullptr;
+		void execute(kyra::RHICommandBuffer::Ptr& commandBuffer, RPIRenderDataBuffer& renderData) {
+			if (m_RenderPasses.empty()) {
+				return;
 			}
-			return m_PipelineState.get();
-		}
-
-		void compile(std::vector<RPIRenderPass*>& renderPasses) {
-			m_RenderPassesPtr.clear();
-			for (auto& renderPass : renderPasses) {
-				m_RenderPassesPtr.push_back(renderPass);
+			for (auto& renderPass : m_RenderPasses) {
+				renderPass->execute(commandBuffer, renderData);
 			}
 		}
 
-		void execute(RHIDevice::Ptr& renderDevice, RPIRenderDataBuffer& buffer) {
-			kyra::RHICommandQueue::Ptr commandQueue = renderDevice->createCommandQueue();
-			kyra::RHICommandBuffer::Ptr commandBuffer = renderDevice->createCommandBuffer();
-			uint32_t imageIndex = m_SwapChain->acquireNextImage();
-			kyra::RHIFrameBuffer* framebuffer = m_SwapChain->getFrameBuffer(imageIndex);
-			commandBuffer->begin();
-			for (auto& renderPass : m_RenderPassesPtr) {
-				commandBuffer->beginRenderPass(m_RenderPass, framebuffer);
-				renderPass->execute(commandBuffer, buffer);
-				commandBuffer->endRenderPass();
-			}
-			commandBuffer->end();
-			commandQueue->submit(commandBuffer);
-			m_SwapChain->present(imageIndex);
+		void reset() {
+			m_RenderPasses.clear();
 		}
 
 	};
@@ -167,40 +146,38 @@ namespace kyra {
 
 	class RPIRenderPipeline {
 
-		RHIDevice::Ptr m_RenderDevice;
-		std::unique_ptr<RPIRenderGraph> m_RenderGraph;
+		RHIDevice::Ptr* m_RenderDevice;
+		RPIRenderGraph m_RenderGraph;
 		std::vector<RPIFeatureProcessor*> m_FeatureProcessors;
-		std::vector<RPIRenderPass*> m_RenderPasses;
+		std::vector<RPIRenderPass::Ptr> m_RenderPasses;
 	public:
 
-		bool init(Window::Ptr& window) {
-			RHIDevice::Descriptor descriptor;
-			descriptor.window = &window;
-			m_RenderDevice = RHIDevice::create();
-			if (!m_RenderDevice->init(descriptor)) {
-				return false;
-			}
-			m_RenderGraph = std::make_unique<RPIRenderGraph>(m_RenderDevice);
-			return m_RenderGraph->init(m_RenderDevice);
+		struct Descriptor {
+			Window::Ptr* window = nullptr;
+			RHIDevice::Ptr* renderDevice = nullptr;
+		};
+
+		bool init(RPIRenderPipeline::Descriptor& descriptor) {
+			m_RenderDevice = descriptor.renderDevice;
+			return true;
 		}
 		
-		void registerRenderPass(RPIRenderPass* renderPass) {
-			m_RenderPasses.push_back(renderPass);
-			m_RenderPasses.back()->init(*(m_RenderGraph.get()), m_RenderDevice);
+		void registerRenderPass(RPIRenderPass::Ptr renderPass) {
+			m_RenderPasses.push_back(std::move(renderPass));
 		}
 
 		void registerFeatureProcessor(RPIFeatureProcessor* processor) {
 			m_FeatureProcessors.push_back(processor);
-			m_FeatureProcessors.back()->init(m_RenderDevice);
+			m_FeatureProcessors.back()->init(*m_RenderDevice);
 		}
 			
-		void renderFrame() {
-			m_RenderGraph->compile(m_RenderPasses);
+		void renderFrame(RHICommandBuffer::Ptr& commandBuffer) {
 			kyra::RPIRenderDataBuffer buffer;
 			for (auto& processor : m_FeatureProcessors) {
 				processor->gather(buffer);
 			}
-			m_RenderGraph->execute(m_RenderDevice,buffer);
+			m_RenderGraph.compile(m_RenderPasses);
+			m_RenderGraph.execute(commandBuffer,buffer);
 		}
 
 	};
@@ -240,12 +217,14 @@ public:
 
 class TriangleRenderPass : public kyra::RPIRenderPass {
 
-	kyra::RHIPipelineState* m_PipelineState;
+	kyra::RHIPipelineState::Ptr m_PipelineState;
 	kyra::RHIBuffer::Ptr m_VertexBuffer;
+	kyra::RHIRenderPass::Descriptor renderPassDescriptor;
+	kyra::RHIRenderPass::Ptr m_RenderPass;
 
 public:
 
-	bool init(kyra::RPIRenderGraph& graph, kyra::RHIDevice::Ptr& device) {
+	bool init(kyra::RHIDevice::Ptr& device) final {
 		
 		registerInput({
 			"TEST_IMAGE",
@@ -304,9 +283,8 @@ public:
 			{0, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 0},
 			{1, kyra::RHIPipelineState::BufferLayoutAttribute::Format::Float, 3, 3 * sizeof(float)}
 		};
-
-		m_PipelineState = graph.aquirePipelineState(pipelineStateDescriptor);
-
+		m_PipelineState = device->createPipelineState(pipelineStateDescriptor);
+	
 		Vertex vertices[] = {
 			{{0,0.5,0}, {1,0,0}},
 			{{-0.5,-0.5,0}, {0,1,0}},
@@ -321,16 +299,23 @@ public:
 			return false;
 		}
 		m_VertexBuffer->upload(vertices, sizeof(vertices));
+
+		kyra::RHIRenderPass::Descriptor renderPassDescriptor;
+		m_RenderPass = device->createRenderPass(renderPassDescriptor);
+
+
 		return true;
 	}
 
 	void execute(kyra::RHICommandBuffer::Ptr& commandBuffer, kyra::RPIRenderDataBuffer& buffer) {
 		std::vector<TriangleRenderData>& data = buffer.getBuffer<TriangleRenderData>();
+		commandBuffer->beginRenderPass(m_RenderPass, nullptr);
 		for (auto& renderData : data) {
 			commandBuffer->bindPipeline(m_PipelineState);
 			commandBuffer->bindVertexBuffer(0, m_VertexBuffer);
 			commandBuffer->draw(0, 3);
 		}
+		commandBuffer->endRenderPass();
 	}
 
 };
@@ -370,21 +355,53 @@ public:
 			return -1;
 		}
 
-		kyra::RPIRenderPipeline renderPipeline;
-		if (!renderPipeline.init(window)) {
+
+		kyra::RHIDevice::Descriptor renderDeviceDescriptor;
+		renderDeviceDescriptor.window = &window;
+		kyra::RHIDevice::Ptr renderDevice = kyra::RHIDevice::create();
+		if (!renderDevice->init(renderDeviceDescriptor)) {
 			return -2;
+		}
+
+		kyra::RHISwapChain::Descriptor swapChainDescriptor;
+		swapChainDescriptor.width = 1280;
+		swapChainDescriptor.height = 720;
+		kyra::RHISwapChain::Ptr m_SwapChain = renderDevice->createSwapChain(swapChainDescriptor);
+		if (!m_SwapChain) {
+			return -3;
+		}
+
+		kyra::RHIPipelineState::Ptr m_PipelineState;
+
+
+		kyra::RPIRenderPipeline::Descriptor renderPipelineDescriptor;
+		renderPipelineDescriptor.renderDevice = &renderDevice;
+		kyra::RPIRenderPipeline renderPipeline;
+		if (!renderPipeline.init(renderPipelineDescriptor)) {
+			return -4;
 		}
 
 		kyra::RPIFeatureProcessor::Ptr triangleFeatureProcessor = std::make_unique<TriangleFeature>();
 		renderPipeline.registerFeatureProcessor(triangleFeatureProcessor.get());
 
 		kyra::RPIRenderPass::Ptr triangleRenderPass = std::make_unique<TriangleRenderPass>();
-		renderPipeline.registerRenderPass(triangleRenderPass.get());
+		if (!triangleRenderPass->init(renderDevice)) {
+			return -5;
+		}
+		renderPipeline.registerRenderPass(std::move(triangleRenderPass));
+
 
 		while (!m_EventHandler.isQuitRequested()) {
 			window->processEvents();
-			renderPipeline.renderFrame();
-
+			kyra::RHICommandQueue::Ptr commandQueue = renderDevice->createCommandQueue();
+			kyra::RHICommandBuffer::Ptr commandBuffer = renderDevice->createCommandBuffer();
+			uint32_t imageIndex = m_SwapChain->acquireNextImage();
+			kyra::RHIFrameBuffer* framebuffer = m_SwapChain->getFrameBuffer(imageIndex);
+			commandBuffer->begin();
+			renderPipeline.renderFrame(commandBuffer);
+			commandBuffer->end();
+			commandQueue->submit(commandBuffer);
+			m_SwapChain->present(imageIndex);
 		}
 
 		return 0;
